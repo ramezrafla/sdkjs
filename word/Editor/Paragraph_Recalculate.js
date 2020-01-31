@@ -2050,13 +2050,6 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
     {
         var Item = this.Content[Pos];
 
-        while (Item.HasSpaces && Item.HasSpaces()) {
-          var index = Item.GetLastSpacePos()
-          if (index == -1) break;
-          Item.Split2(index, this, Pos)
-          ++ContentLen
-        }
-
         if ( para_Math === Item.Type )
         {
             var NotInlineMath = this.Check_MathPara(Pos);

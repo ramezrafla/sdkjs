@@ -517,7 +517,7 @@ ParaRun.prototype.Add = function(Item, bMath)
 
 	if (this.IsParaEndRun())
 	{
-		var NewRun = this.private_SplitRunInCurPos();
+        var NewRun = this.private_SplitRunInCurPos();
 		if (NewRun)
 		{
 			NewRun.MoveCursorToStartPos();
@@ -526,6 +526,19 @@ ParaRun.prototype.Add = function(Item, bMath)
 			return;
 		}
 	}
+
+    // we split Run's along space boundaries to allow for RTL positioning
+    if (Item.Type == para_Space && !this.Is_Empty())
+    {
+        var NewRun = this.private_SplitRunInCurPos();
+        if (NewRun)
+        {
+            NewRun.MoveCursorToStartPos();
+            NewRun.Add(Item, bMath);
+            NewRun.Make_ThisElementCurrent();
+            return;
+        }
+    }
 
 	if (this.Paragraph && this.Paragraph.LogicDocument)
 	{

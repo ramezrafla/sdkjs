@@ -7328,6 +7328,18 @@ function BinaryFileReader(doc, openParams)
 			}
 		}
 
+        //split runs after styles because rPr can have a RStyle
+        for (var i = 0; i < this.oReadResult.runsToSplit.length; ++i) {
+            var run = this.oReadResult.runsToSplit[i];
+            var runParent = run.Get_Parent();
+            var runPos = run.private_GetPosInParent(runParent);
+            while (true) {
+                var index = run.GetLastSpacePos()
+                if (index == -1) break
+                run.Split2(index, runParent, runPos);
+            }
+        }
+
 		var setting = this.oReadResult.setting;
 		var fInitCommentData = function(comment)
 		{
@@ -7660,6 +7672,19 @@ function BinaryFileReader(doc, openParams)
 
 			this.Document.On_EndLoad();
 		}
+
+        //split runs after styles because rPr can have a RStyle
+        for (var i = 0; i < this.oReadResult.runsToSplit.length; ++i) {
+            var run = this.oReadResult.runsToSplit[i];
+            var runParent = run.Get_Parent();
+            var runPos = run.private_GetPosInParent(runParent);
+            while (true) {
+                var index = run.GetLastSpacePos()
+                if (index == -1) break
+                run.Split2(index, runParent, runPos);
+            }
+        }
+
 		//add comments
 		var setting = this.oReadResult.setting;
 		var fInitCommentData = function(comment)
@@ -10405,7 +10430,10 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curFoo
             res = this.bcr.Read1(length, function(t, l){
                 return oThis.ReadRun(t, l, oParStruct);
             });
-			oParStruct.addElemToContentFinish();
+			var run = oParStruct.addElemToContentFinish();
+            if (run.HasSpaces()) {
+                this.oReadResult.runsToSplit.push(run);
+            }
         }
 		else if (c_oSerParType.CommentStart === type)
         {
