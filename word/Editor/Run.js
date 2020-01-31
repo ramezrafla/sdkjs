@@ -166,14 +166,13 @@ ParaRun.prototype.GetId = function()
 };
 ParaRun.prototype.GetOrigPos = function(Pos) {
     if (!this.isArabic) return Pos
+    if (Pos >= this.DisplayContent.length) return 0
     var Item = this.DisplayContent[Pos]
-    if (Item && Item.Pos) {
-        if (Item === this.Content[Item.Pos]) return Item.Pos
-    }
-    if (Item) Pos = this.Content.indexOf(Item)
-    return Pos
+    var OrigPos = Item.Pos
+    return OrigPos && OrigPos > -1 ? OrigPos : Pos
 }
 ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
+    if (!this.isArabic) return [Pos1, Pos2]
     var OrigPos1 = this.GetOrigPos(Pos1)
     var OrigPos2 = this.GetOrigPos(Pos2)
     if (OrigPos1 < OrigPos2) return [OrigPos1, OrigPos2]
@@ -264,9 +263,18 @@ ParaRun.prototype.Copy = function(Selected, oPr, isCopyReviewPr)
 		EndPos = -1;
 	}
 
+    // this.ProcessArabicContent()
+    //console.log('before ' + StartPos + ' --> ' + EndPos)
+    var Arr = this.GetOrigRange(StartPos, EndPos)
+    StartPos = Arr[0]
+    EndPos = Arr[1]
+    //console.log('after ' + StartPos + ' --> ' + EndPos)
+    //console.log(this.Content, this.DisplayContent)
+
 	for (var CurPos = StartPos, AddedPos = 0; CurPos < EndPos; CurPos++)
 	{
 		var Item = this.Content[CurPos];
+        console.log(Item.Char)
 
 		if (para_NewLine === Item.Type
 			&& oPr
@@ -295,6 +303,7 @@ ParaRun.prototype.Copy = function(Selected, oPr, isCopyReviewPr)
 		}
 	}
 
+    // console.log(NewRun)
     return NewRun;
 };
 
@@ -11859,6 +11868,7 @@ ParaRun.prototype.ProcessArabicContent = function() {
 
     for (var i = 0; i < len; i++) {
         var value = this.Content[i].Value
+        this.Content[i].Pos = i
         if (value) string += String.fromCharCode(value)
         arabicChar = value && arabicChars[value]
         if (arabicChar || isArabic) {
