@@ -263,18 +263,14 @@ ParaRun.prototype.Copy = function(Selected, oPr, isCopyReviewPr)
 		EndPos = -1;
 	}
 
-    // this.ProcessArabicContent()
-    //console.log('before ' + StartPos + ' --> ' + EndPos)
     var Arr = this.GetOrigRange(StartPos, EndPos)
     StartPos = Arr[0]
     EndPos = Arr[1]
-    //console.log('after ' + StartPos + ' --> ' + EndPos)
-    //console.log(this.Content, this.DisplayContent)
 
 	for (var CurPos = StartPos, AddedPos = 0; CurPos < EndPos; CurPos++)
 	{
 		var Item = this.Content[CurPos];
-        console.log(Item.Char)
+        //console.log(Item.Char)
 
 		if (para_NewLine === Item.Type
 			&& oPr
@@ -404,11 +400,12 @@ ParaRun.prototype.Get_Text = function(Text)
     if ( null === Text.Text )
         return;
 
-    var ContentLen = this.Content.length;
+    var ContentLen = this.DisplayContent.length;
+    var Str = ''
 
     for ( var CurPos = 0; CurPos < ContentLen; CurPos++ )
     {
-        var Item = this.Content[CurPos];
+        var Item = this.DisplayContent[CurPos];
         var ItemType = Item.Type;
 
         var bBreak = false;
@@ -421,7 +418,7 @@ ParaRun.prototype.Get_Text = function(Text)
             {
 				if (true === Text.BreakOnNonText)
 				{
-					Text.Text = null;
+					Str = null;
 					bBreak = true;
 				}
 
@@ -431,24 +428,28 @@ ParaRun.prototype.Get_Text = function(Text)
 			{
 				if (true === Text.BreakOnNonText)
 				{
-					Text.Text = null;
+					Str = null;
 					bBreak = true;
 				}
 
 				if (true === Text.ParaEndToSpace)
-					Text.Text += " ";
+					Str += " ";
 
 				break;
 			}
 
-            case para_Text : Text.Text += String.fromCharCode(Item.Value); break;
+            case para_Text : Str += String.fromCharCode(Item.Value); break;
             case para_Space:
-            case para_Tab  : Text.Text += " "; break;
+            case para_Tab  : Str += " "; break;
         }
 
         if ( true === bBreak )
             break;
     }
+
+    if (this.isArabic && Str) Text.Text = ReverseString(Str)
+    else Text.Text = Str
+
 };
 
 // Проверяем пустой ли ран
@@ -2472,7 +2473,7 @@ ParaRun.prototype.GetSelectedText = function(bAll, bClearText, oPr)
     if ( true === bAll )
     {
         StartPos = 0;
-        EndPos   = this.Content.length;
+        EndPos   = this.DisplayContent.length;
     }
     else if ( true === this.Selection.Use )
     {
@@ -2491,7 +2492,7 @@ ParaRun.prototype.GetSelectedText = function(bAll, bClearText, oPr)
 
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
-        var Item = this.Content[Pos];
+        var Item = this.DisplayContent[Pos];
         var ItemType = Item.Type;
 
         switch ( ItemType )
@@ -2538,6 +2539,7 @@ ParaRun.prototype.GetSelectedText = function(bAll, bClearText, oPr)
         }
     }
 
+    if (Str && this.isArabic) Str = ReverseString(Str)
     return Str;
 };
 
@@ -11949,6 +11951,10 @@ ParaRun.prototype.ProcessArabicContent = function() {
 
 function CanUpdatePosition(Para, Run) {
     return (Para && true === Para.Is_UseInDocument() && true === Run.Is_UseInParagraph());
+}
+
+function ReverseString(Str) {
+    return Str.split("").reverse().join("")
 }
 
 //--------------------------------------------------------export----------------------------------------------------
