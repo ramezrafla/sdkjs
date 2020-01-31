@@ -31,7 +31,7 @@
  */
 
 "use strict";
-  
+
 // Import
 var g_oTableId = AscCommon.g_oTableId;
 var g_oTextMeasurer = AscCommon.g_oTextMeasurer;
@@ -80,6 +80,7 @@ function ParaRun(Paragraph, bMathRun)
 	this.Paragraph = Paragraph;                 // Ссылка на параграф
 	this.Pr        = new CTextPr();             // Текстовые настройки данного run
 	this.Content   = [];                        // Содержимое данного run
+    this.DisplayContent = this.Content
 
 	this.State      = new CParaRunState();       // Положение курсора и селекта в данного run
 	this.Selection  = this.State.Selection;
@@ -163,6 +164,41 @@ ParaRun.prototype.GetId = function()
 {
 	return this.Id;
 };
+ParaRun.prototype.GetOrigPos = function(Pos) {
+    if (!this.isArabic) return Pos
+    var Item = this.DisplayContent[Pos]
+    if (Item && Item.Pos) {
+        if (Item === this.Content[Item.Pos]) return Item.Pos
+    }
+    if (Item) Pos = this.Content.indexOf(Item)
+    return Pos
+}
+ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
+    var OrigPos1 = this.GetOrigPos(Pos1)
+    var OrigPos2 = this.GetOrigPos(Pos2)
+    if (OrigPos1 < OrigPos2) return [OrigPos1, OrigPos2]
+    return [OrigPos2, OrigPos1]
+}
+ParaRun.prototype.ResetContent = function() {
+    this.DisplayContent = this.Content
+}
+ParaRun.prototype.HasSpaces = function() {
+  var spacesCount = 0
+  var Pos = 1
+  while (Pos < this.Content.length-1 && spacesCount == 0) {
+    if (this.Content[Pos].Type == para_Space) return true
+    ++Pos
+  }
+  return false
+};
+ParaRun.prototype.GetLastSpacePos = function() {
+  var Pos = this.Content.length - 2;
+  while (Pos > 0) {
+    if (this.Content[Pos].Type == para_Space) return Pos
+    --Pos
+  }
+  return -1
+}
 ParaRun.prototype.Set_ParaMath = function(ParaMath, Parent)
 {
     this.ParaMath = ParaMath;
@@ -1280,6 +1316,7 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 
 	History.Add(new CChangesRunAddItem(this, Pos, [Item], true));
     this.Content.splice( Pos, 0, Item );
+    this.ProcessArabicContent()
 
     if (true === UpdatePosition)
         this.private_UpdatePositionsOnAdd(Pos);
@@ -1343,6 +1380,7 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 	}
 
     this.Content.splice( Pos, Count );
+    this.ProcessArabicContent()
 
     if (true === UpdatePosition)
         this.private_UpdatePositionsOnRemove(Pos, Count);
@@ -1413,6 +1451,7 @@ ParaRun.prototype.ConcatToContent = function(arrNewItems)
 
 	var StartPos = this.Content.length;
 	this.Content = this.Content.concat(arrNewItems);
+    this.ProcessArabicContent()
 
 	History.Add(new CChangesRunAddItem(this, StartPos, arrNewItems, false));
 
@@ -2597,7 +2636,7 @@ ParaRun.prototype.Remove_StartTabs = function(TabsCounter)
 };
 //-----------------------------------------------------------------------------------
 // Функции пересчета
-//-----------------------------------------------------------------------------------   
+//-----------------------------------------------------------------------------------
 // Пересчитываем размеры всех элементов
 ParaRun.prototype.Recalculate_MeasureContent = function()
 {
@@ -5458,9 +5497,10 @@ ParaRun.prototype.Draw_Elements = function(PDSE)
 
 	var isHiddenCFPart = PDSE.ComplexFields.IsComplexFieldCode();
 
+    this.ProcessArabicContent()
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
-		var Item = this.private_CheckInstrText(this.Content[Pos]);
+		var Item = this.private_CheckInstrText(this.DisplayContent[Pos]);
         var ItemType = Item.Type;
 
 		if ((PDSE.ComplexFields.IsHiddenFieldContent() || isHiddenCFPart) && para_End !== ItemType && para_FieldChar !== ItemType)
@@ -8729,6 +8769,7 @@ ParaRun.prototype.Read_FromBinary2 = function(Reader)
             if ( null !== Element )
                 this.Content.push( Element );
         }
+        this.ProcessArabicContent()
     }
 };
 
@@ -11302,6 +11343,7 @@ function CParaRunStartState(Run)
     {
         this.Content.push(Run.Content[i]);
     }
+    this.ProcessArabicContent && this.ProcessArabicContent()
 }
 
 function CReviewInfo()
@@ -11503,6 +11545,384 @@ CReviewInfo.prototype.IsMovedFrom = function()
 	return this.MoveType === Asc.c_oAscRevisionsMove.MoveFrom;
 };
 
+// https://www.key-shortcut.com/en/writing-systems/%EF%BA%95%EF%BA%8F%D8%A2-arabic-alphabet
+// https://github.com/mapmeld/circular-arabic/blob/gh-pages/circular-arabic.js
+var arabicChars = {
+  1569: {
+    initial: "ء‎",
+    isolated: "ء",
+    medial: "ء",
+    final: "ء",
+    break: true
+  },
+  // madda above alef
+  1570: {
+    initial: "آ‎",
+    isolated: "ﺁ",
+    medial: "ﺂ",
+    final: "ﺂ",
+    break: true
+  },
+  // hamza above and below alef
+  1571: {
+    initial: "أ",
+    isolated: "ﺃ",
+    medial: "ﺄ",
+    final: "ﺄ",
+    break: true
+  },
+  1572: {
+    initial: "ؤ",
+    isolated: "ؤ",
+    medial: "ﺆ",
+    final: "ﺆ",
+    break: true
+  },
+  1573: {
+    initial: "إ",
+    isolated: "ﺇ",
+    medial: "ﺈ",
+    final: "ﺈ",
+    break: true
+  },
+  1574: {
+    initial: "ﺋ",
+    isolated: "ئ",
+    medial: "ﺊ",
+    final: "ﺊ"
+  },
+  1575: {
+    initial: "ا",
+    isolated: "ا",
+    medial: "ﺎ",
+    final: "ﺎ",
+    break: true
+  },
+  1576: {
+    initial: "ﺑ",
+    isolated: "ﺏ",
+    medial: "ﺒ",
+    final: "ﺐ"
+  },
+  // 1577 ة
+  1577: {
+    initial: "ة",
+    isolated: "ة",
+    medial: "ﺔ",
+    final: "ﺔ",
+    break: true
+  },
+  1578: {
+    initial: "ﺗ",
+    isolated: "ﺕ",
+    medial: "ﺘ",
+    final: "ﺖ"
+  },
+  1579: {
+    initial: "ﺛ",
+    isolated: "ﺙ",
+    medial: "ﺜ",
+    final: "ﺚ"
+  },
+  1580: {
+    initial: "ﺟ",
+    isolated: "ﺝ",
+    medial: "ﺠ",
+    final: "ﺞ"
+  },
+  1581: {
+    initial: "ﺣ",
+    isolated: "ﺡ",
+    medial: "ﺤ",
+    final: "ﺢ"
+  },
+  1582: {
+    initial: "ﺧ",
+    isolated: "ﺥ",
+    medial: "ﺨ",
+    final: "ﺦ"
+  },
+  1583: {
+    initial: "ﺩ",
+    isolated: "ﺩ",
+    medial: "ﺪ",
+    final: "ﺪ",
+    break: true
+  },
+  1584: {
+    initial: "ﺫ",
+    isolated: "ﺫ",
+    medial: "ﺬ",
+    final: "ﺬ",
+    break: true
+  },
+  1585: {
+    initial: "ﺭ",
+    isolated: "ﺭ",
+    medial: "ﺮ",
+    final: "ﺮ",
+    break: true
+  },
+  1586: {
+    initial: "ﺯ",
+    isolated: "ﺯ",
+    medial: "ﺰ",
+    final: "ﺰ",
+    break: true
+  },
+  1688: {
+    initial: "ﮊ",
+    isolated: "ﮊ",
+    medial: "ﮋ",
+    final: "ﮋ",
+    break: true
+  },
+  1587: {
+    initial: "ﺳ",
+    isolated: "ﺱ",
+    medial: "ﺴ",
+    final: "ﺲ"
+  },
+  1588: {
+    initial: "ﺷ",
+    isolated: "ﺵ",
+    medial: "ﺸ",
+    final: "ﺶ"
+  },
+  1589: {
+    initial: "ﺻ",
+    isolated: "ﺹ",
+    medial: "ﺼ",
+    final: "ﺺ"
+  },
+  1590: {
+    initial: "ﺿ",
+    isolated: "ﺽ",
+    medial: "ﻀ",
+    final: "ﺾ"
+  },
+  1591: {
+    initial: "ﻃ",
+    isolated: "ﻁ",
+    medial: "ﻄ",
+    final: "ﻂ"
+  },
+  1592: {
+    initial: "ﻇ",
+    isolated: "ﻅ",
+    medial: "ﻈ",
+    final: "ﻆ"
+  },
+  1593: {
+    initial: "ﻋ",
+    isolated: "ﻉ",
+    medial: "ﻌ",
+    final: "ﻊ"
+  },
+  1594: {
+    initial: "ﻏ",
+    isolated: "ﻍ",
+    medial: "ﻐ",
+    final: "ﻎ"
+  },
+  1601: {
+    initial: "ﻓ",
+    isolated: "ﻑ",
+    medial: "ﻔ",
+    final: "ﻒ"
+  },
+  1602: {
+    initial: "ﻗ",
+    isolated: "ﻕ",
+    medial: "ﻘ",
+    final: "ﻖ"
+  },
+  1604: {
+    initial: "ﻟ",
+    isolated: "ﻝ",
+    medial: "ﻠ",
+    final: "ﻞ"
+  },
+  1605: {
+    initial: "ﻣ",
+    isolated: "ﻡ",
+    medial: "ﻤ",
+    final: "ﻢ"
+  },
+  1606: {
+    initial: "ﻧ",
+    isolated: "ﻥ",
+    medial: "ﻨ",
+    final: "ﻦ"
+  },
+  1607: {
+    initial: "ﻫ",
+    isolated: "ﻩ",
+    medial: "ﻬ",
+    final: "ﻪ"
+  },
+  1608: {
+    initial: "ﻭ",
+    isolated: "ﻭ",
+    medial: "ﻮ",
+    final: "ﻮ",
+    break: true
+  },
+  1609: {
+    initial: "ﯨ",
+    isolated: "ﻯ",
+    medial: "ﯩ",
+    final: "ﻰ"
+  },
+  1610: {
+    initial: "ﻳ",
+    isolated: "ﻱ",
+    medial: "ﻴ",
+    final: "ﻲ"
+  },
+  1662: {
+    initial: "ﭘ",
+    isolated: "ﭖ",
+    medial: "ﭙ",
+    final: "ﭗ"
+  },
+  1670: {
+    initial: "ﭼ",
+    isolated: "ﭺ",
+    medial: "ﭽ",
+    final: "ﭻ"
+  },
+  1603: {
+    initial: "ﻛ",
+    isolated: "ﻙ",
+    medial: "ﻜ",
+    final: "ﻚ"
+  },
+  1700: {
+    initial: "ﭬ",
+    isolated: "ڤ",
+    medial: "ﭭ",
+    final: "ﭫ"
+  },
+  1740: {
+    initial: "ﯨ",
+    isolated: "ﻯ",
+    medial: "ﯩ",
+    final: "ﻰ"
+  },
+  65010: {
+    initial: "ﷲ",
+    isolated: "ﷲ",
+    medial: "ﷲ",
+    final: "ﷲ",
+    break: true
+  },
+  65269: {
+    initial: "ﻵ",
+    isolated: "ﻵ",
+    medial: "ﻶ",
+    final: "ﻶ",
+    break: true
+  },
+  65271: {
+    initial: "ﻷ",
+    isolated: "ﻷ",
+    medial: "ﻸ",
+    final: "ﻸ",
+    break: true
+  },
+  65273: {
+    initial: "ﻹ",
+    isolated: "ﻹ",
+    medial: "ﻺ",
+    final: "ﻺ",
+    break: true
+  },
+  65275: {
+    initial: "ﻻ",
+    isolated: "ﻻ",
+    medial: "ﻼ",
+    final: "ﻼ",
+    break: true
+  }
+}
+
+ParaRun.prototype.ProcessArabicContent = function() {
+
+    var isArabic = false
+    var hasArabic = false
+    var resultContent = []
+    var len = this.Content.length
+    var string = ''
+    var arabicChar
+    var diff
+
+    for (var i = 0; i < len; i++) {
+        var value = this.Content[i].Value
+        if (value) string += String.fromCharCode(value)
+        arabicChar = value && arabicChars[value]
+        if (arabicChar || isArabic) {
+            if (!isArabic) {
+                isArabic = true
+                hasArabic = true
+                start = i
+                this.Content[i].DisplayValue = arabicChar.initial.charCodeAt(0)
+                this.Content[i].break = arabicChar.break
+                this.Content[i].Char = String.fromCharCode(value)
+                this.Content[i].DisplayChar = String.fromCharCode(this.Content[i].DisplayValue)
+            }
+            else {
+                if (arabicChar) {
+                    this.Content[i].DisplayValue = this.Content[i-1].break ? arabicChar.initial.charCodeAt(0) : arabicChar.medial.charCodeAt(0)
+                    this.Content[i].break = arabicChar.break
+                    this.Content[i].Char = String.fromCharCode(value)
+                    this.Content[i].DisplayChar = String.fromCharCode(this.Content[i].DisplayValue)
+                }
+                // period or comma
+                else {
+                    isArabic = false
+                    diff = i - start
+                    arabicChar = arabicChars[this.Content[i-1].Value]
+                    if (diff == 1) this.Content[i-1].DisplayValue = arabicChar.isolated.charCodeAt(0)
+                    else this.Content[i-1].DisplayValue = this.Content[i-2].break ? arabicChar.isolated.charCodeAt(0) : arabicChar.final.charCodeAt(0)
+                    this.Content[i-1].DisplayChar = String.fromCharCode(this.Content[i-1].DisplayValue)
+                }
+            }
+        }
+        resultContent.push(this.Content[i])
+    }
+
+    if (isArabic) {
+        arabicChar = arabicChars[this.Content[len-1].Value]
+        if (arabicChar) {
+            if (len == 1) this.Content[0].DisplayValue = arabicChar.isolated.charCodeAt(0)
+            else this.Content[len-1].DisplayValue = this.Content[len-2].break ? arabicChar.isolated.charCodeAt(0) : arabicChar.final.charCodeAt(0)
+            this.Content[len-1].DisplayChar = String.fromCharCode(this.Content[len-1].DisplayValue)
+        }
+    }
+
+    this.string = string
+
+    // postprocessing
+    if (hasArabic) {
+        this.isArabic = true
+        resultContent.reverse()
+        // console.log('-'+this.string+'- hasSpaces='+this.HasSpaces() + ' lastSpaceIndex='+this.GetLastSpacePos(), resultContent)
+        this.DisplayContent = resultContent
+    }
+    else {
+        // we can safely discard resultContent
+        resultContent = null
+        this.isArabic = false
+        this.DisplayContent = this.Content
+    }
+
+    if (this.DisplayContent.length != this.Content.length) {
+        console.error('Not the same length', this)
+        console.trace()
+    }
+    return this.DisplayContent
+}
 
 function CanUpdatePosition(Para, Run) {
     return (Para && true === Para.Is_UseInDocument() && true === Run.Is_UseInParagraph());

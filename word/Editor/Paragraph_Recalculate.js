@@ -1891,7 +1891,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
                                 // TODO: Здесь нужно улучшить проверку, т.к. отключено выравнивание по центру для всей
                                 //       последней строки, а нужно отключить для последнего отрезка, в котором идет
                                 //       конец параграфа.
-                                
+
                                 // Ничего не делаем (выравниваем текст по левой границе)
                             }
                             else if (CurRange == RangesCount - 1)
@@ -2049,6 +2049,13 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
     for ( ;Pos < ContentLen; Pos++ )
     {
         var Item = this.Content[Pos];
+
+        while (Item.HasSpaces && Item.HasSpaces()) {
+          var index = Item.GetLastSpacePos()
+          if (index == -1) break;
+          Item.Split2(index, this, Pos)
+          ++ContentLen
+        }
 
         if ( para_Math === Item.Type )
         {

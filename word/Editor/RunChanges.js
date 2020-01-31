@@ -276,7 +276,7 @@ CChangesRunAddItem.prototype.Undo = function()
 	var oRun = this.Class;
 
 	oRun.Content.splice(this.Pos, this.Items.length);
-
+    oRun.ProcessArabicContent()
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
 	oRun.private_UpdateTrackRevisionOnChangeContent(false);
@@ -289,6 +289,7 @@ CChangesRunAddItem.prototype.Redo = function()
 	var Array_end   = oRun.Content.slice(this.Pos);
 
 	oRun.Content = Array_start.concat(this.Items, Array_end);
+    oRun.ProcessArabicContent && oRun.ProcessArabicContent()
 
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
@@ -334,6 +335,7 @@ CChangesRunAddItem.prototype.Load = function(Color)
 		}
 	}
 
+    oRun.ProcessArabicContent()
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
 	oRun.private_UpdateTrackRevisionOnChangeContent(false);
@@ -383,7 +385,7 @@ CChangesRunRemoveItem.prototype.Redo = function()
 {
 	var oRun = this.Class;
 	oRun.Content.splice(this.Pos, this.Items.length);
-
+    oRun.ProcessArabicContent()
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
 	oRun.private_UpdateTrackRevisionOnChangeContent(false);
@@ -438,6 +440,7 @@ CChangesRunRemoveItem.prototype.Load = function()
 	{
 		oRun.CollaborativeMarks.Update_OnRemove(nLastChangesPos, nChangesCount);
 		oRun.Content.splice(nLastChangesPos, nChangesCount);
+        oRun.ProcessArabicContent()
 		oRun.private_UpdatePositionsOnRemove(nLastChangesPos, nChangesCount);
 		oRun.private_UpdateCompositeInputPositionsOnRemove(nLastChangesPos, nChangesCount);
 		AscCommon.CollaborativeEditing.Update_DocumentPositionsOnRemove(oRun, nLastChangesPos, nChangesCount);

@@ -292,7 +292,7 @@ ParaText.prototype.Set_CharCode = function(CharCode)
 };
 ParaText.prototype.Draw = function(X, Y, Context)
 {
-	var CharCode = this.Value;
+	var CharCode = this.DisplayValue || this.Value;
 
 	var FontKoef = 1;
 	if (this.Flags & PARATEXT_FLAGS_FONTKOEF_SCRIPT && this.Flags & PARATEXT_FLAGS_FONTKOEF_SMALLCAPS)
@@ -314,7 +314,7 @@ ParaText.prototype.Draw = function(X, Y, Context)
 ParaText.prototype.Measure = function(Context, TextPr)
 {
 	var bCapitals      = false;
-	var CharCode       = this.Value;
+	var CharCode       = this.DisplayValue || this.Value;
 	var ResultCharCode = CharCode;
 
 	if (true === TextPr.Caps || true === TextPr.SmallCaps)
@@ -746,7 +746,7 @@ function ParaEnd()
 	CRunElementBase.call(this);
 
     this.SectionPr    = null;
-    this.WidthVisible = 0x00000000 | 0; 
+    this.WidthVisible = 0x00000000 | 0;
 }
 ParaEnd.prototype = Object.create(CRunElementBase.prototype);
 ParaEnd.prototype.constructor = ParaEnd;
