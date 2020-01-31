@@ -1629,7 +1629,7 @@ ParaRun.prototype.Recalculate_CurPos = function(X, Y, CurrentRun, _CurRange, _Cu
 
     if(this.Type == para_Math_Run)
     {
-        var Lng = this.Content.length;
+        var Lng = this.DisplayContent.length;
 
         Pos = _EndPos;
 
@@ -1647,14 +1647,14 @@ ParaRun.prototype.Recalculate_CurPos = function(X, Y, CurrentRun, _CurRange, _Cu
         }
         else if(Pos < EndPos)
         {
-            loc = this.Content[Pos].GetLocationOfLetter();
+            loc = this.DisplayContent[Pos].GetLocationOfLetter();
 
             X += loc.x;
             Y += loc.y;
         }
         else if(!(StartPos == EndPos)) // исключаем этот случай StartPos == EndPos && EndPos == Pos, это возможно когда конец Run находится в начале строки, при этом ни одна из букв этого Run не входит в эту строку
         {
-            var Letter = this.Content[Pos - 1];
+            var Letter = this.DisplayContent[Pos - 1];
             loc = Letter.GetLocationOfLetter();
 
             X += loc.x + Letter.Get_WidthVisible();
@@ -1666,7 +1666,7 @@ ParaRun.prototype.Recalculate_CurPos = function(X, Y, CurrentRun, _CurRange, _Cu
     {
         for ( ; Pos < _EndPos; Pos++ )
         {
-            var Item = this.private_CheckInstrText(this.Content[Pos]);
+            var Item = this.private_CheckInstrText(this.DisplayContent[Pos]);
             var ItemType = Item.Type;
 
             if (para_Drawing === ItemType && drawing_Inline !== Item.DrawingType)
@@ -2693,7 +2693,7 @@ ParaRun.prototype.Recalculate_MeasureContent = function()
 
 	if (this.RecalcInfo.Measure)
 	{
-		for (var nPos = 0, nCount = this.Content.length; nPos < nCount; ++nPos)
+		for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; ++nPos)
 		{
 			this.private_MeasureElement(nPos, oTextPr, oTheme, oInfoMathText);
 		}
@@ -2703,7 +2703,7 @@ ParaRun.prototype.Recalculate_MeasureContent = function()
 		for (var nIndex = 0, nCount = this.RecalcInfo.MeasurePositions.length; nIndex < nCount; ++nIndex)
 		{
 			var nPos = this.RecalcInfo.MeasurePositions[nIndex];
-			if (!this.Content[nPos])
+			if (!this.DisplayContent[nPos])
 				continue;
 
 			this.private_MeasureElement(nPos, oTextPr, oTheme, oInfoMathText);
@@ -2717,7 +2717,7 @@ ParaRun.prototype.private_MeasureElement = function(nPos, oTextPr, oTheme, oInfo
 {
 	var oParagraph = this.GetParagraph();
 
-	var oItem     = this.Content[nPos];
+	var oItem     = this.DisplayContent[nPos];
 	var nItemType = oItem.Type;
 
 	if (para_Drawing === nItemType && oParagraph)
@@ -2750,10 +2750,10 @@ ParaRun.prototype.Recalculate_Measure2 = function(Metrics)
     var TAscent  = Metrics.Ascent;
     var TDescent = Metrics.Descent;
 
-    var Count = this.Content.length;
+    var Count = this.DisplayContent.length;
     for ( var Index = 0; Index < Count; Index++ )
     {
-        var Item = this.Content[Index];
+        var Item = this.DisplayContent[Index];
         var ItemType = Item.Type;
 
         if ( para_Text === ItemType )
@@ -2848,7 +2848,7 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 
     var Pos = RangeStartPos;
 
-    var ContentLen = this.Content.length;
+    var ContentLen = this.DisplayContent.length;
     var XRange    = PRS.XRange;
     var oSectionPr = undefined;
 
@@ -2864,7 +2864,7 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
     {
         for (; Pos < ContentLen; Pos++)
         {
-            var Item = this.Content[Pos];
+            var Item = this.DisplayContent[Pos];
             var ItemType = Item.Type;
 
             if (PRS.ComplexFields.IsHiddenFieldContent() && para_End !== ItemType && para_FieldChar !== ItemType)
@@ -3944,7 +3944,7 @@ ParaRun.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _Cur
 
 	for (var CurPos = StartPos; CurPos < EndPos; CurPos++)
 	{
-		var Item = this.private_CheckInstrText(this.Content[CurPos]);
+		var Item = this.private_CheckInstrText(this.DisplayContent[CurPos]);
 
 		if (Item === Para.Numbering.Item)
 		{
@@ -4059,7 +4059,7 @@ ParaRun.prototype.Recalculate_Range_Width = function(PRSC, _CurLine, _CurRange)
 	var isHiddenCFPart = PRSC.ComplexFields.IsComplexFieldCode();
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
-		var Item = this.private_CheckInstrText(this.Content[Pos]);
+		var Item = this.private_CheckInstrText(this.DisplayContent[Pos]);
         var ItemType = Item.Type;
 
 		if (PRSC.ComplexFields.IsHiddenFieldContent() && para_End !== ItemType && para_FieldChar !== ItemType)
@@ -4263,7 +4263,7 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
 	var isHiddenCFPart = PRSA.ComplexFields.IsComplexFieldCode();
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
-		var Item = this.private_CheckInstrText(this.Content[Pos]);
+		var Item = this.private_CheckInstrText(this.DisplayContent[Pos]);
         var ItemType = Item.Type;
 
 		if (PRSA.ComplexFields.IsHiddenFieldContent() && para_End !== ItemType && para_FieldChar !== ItemType)
@@ -4622,7 +4622,7 @@ ParaRun.prototype.Recalculate_PageEndInfo = function(PRSI, _CurLine, _CurRange)
 
 	for (var Pos = StartPos; Pos < EndPos; ++Pos)
 	{
-		var Item = this.Content[Pos];
+		var Item = this.DisplayContent[Pos];
 		if (para_FieldChar === Item.Type)
 		{
 			PRSI.ProcessFieldChar(Item);
@@ -4904,10 +4904,10 @@ ParaRun.prototype.RecalculateMinMaxContentWidth = function(MinMax)
     var nMaxHeight   = MinMax.nMaxHeight;
 
     var bCheckTextHeight = false;
-    var Count = this.Content.length;
+    var Count = this.DisplayContent.length;
     for ( var Pos = 0; Pos < Count; Pos++ )
     {
-		var Item     = this.private_CheckInstrText(this.Content[Pos]);
+		var Item     = this.private_CheckInstrText(this.DisplayContent[Pos]);
         var ItemType = Item.Type;
 
         switch( ItemType )
@@ -9365,7 +9365,7 @@ ParaRun.prototype.Recalculate_Range_OneLine = function(PRS, ParaPr, Depth)
     // FontClassification.js
     // Get_FontClass
 
-    var Lng = this.Content.length;
+    var Lng = this.DisplayContent.length;
 
     var CurLine  = PRS.Line - this.StartLine;
     var CurRange = ( 0 === CurLine ? PRS.Range - this.StartRange : PRS.Range );
@@ -9387,11 +9387,11 @@ ParaRun.prototype.Math_RecalculateContent = function(PRS)
     var ascent = 0, descent = 0, width = 0;
 
     this.Recalculate_MeasureContent();
-    var Lng = this.Content.length;
+    var Lng = this.DisplayContent.length;
 
     for(var i = 0 ; i < Lng; i++)
     {
-        var Item = this.Content[i];
+        var Item = this.DisplayContent[i];
         var size = Item.size,
             Type = Item.Type;
 
@@ -9529,13 +9529,13 @@ ParaRun.prototype.Math_PreRecalc = function(Parent, ParaMath, ArgSize, RPI, Gaps
         }
     }
 
-    for (var Pos = 0 ; Pos < this.Content.length; Pos++ )
+    for (var Pos = 0 ; Pos < this.DisplayContent.length; Pos++ )
     {
-        if( !this.Content[Pos].IsAlignPoint() )
-            GapsInfo.setGaps(this.Content[Pos], FontSize);
+        if( !this.DisplayContent[Pos].IsAlignPoint() )
+            GapsInfo.setGaps(this.DisplayContent[Pos], FontSize);
 
-        this.Content[Pos].PreRecalc(this, ParaMath);
-        this.Content[Pos].SetUpdateGaps(false);
+        this.DisplayContent[Pos].PreRecalc(this, ParaMath);
+        this.DisplayContent[Pos].SetUpdateGaps(false);
     }
 
 };
@@ -9558,7 +9558,7 @@ ParaRun.prototype.Math_CompareFontSize = function(ComparableFontSize, bStartLett
     var Letter = this.Content[lng - 1];
 
     if(bStartLetter == true)
-        Letter = this.Content[0];
+        Letter = this.DisplayContent[0];
 
 
     var CompiledPr = this.Get_CompiledPr(false);
@@ -9569,7 +9569,7 @@ ParaRun.prototype.Math_CompareFontSize = function(ComparableFontSize, bStartLett
 ParaRun.prototype.Math_EmptyRange = function(_CurLine, _CurRange) // до пересчета нужно узнать будет ли данный Run пустым или нет в данном Range, необходимо для того, чтобы выставить wrapIndent
 {
     var bEmptyRange = true;
-    var Lng = this.Content.length;
+    var Lng = this.DisplayContent.length;
 
     if(Lng > 0)
     {
@@ -9593,9 +9593,9 @@ ParaRun.prototype.Math_UpdateGaps = function(_CurLine, _CurRange, GapsInfo)
 
     for(var Pos = StartPos; Pos < EndPos; Pos++)
     {
-        GapsInfo.updateCurrentObject(this.Content[Pos], FontSize);
+        GapsInfo.updateCurrentObject(this.DisplayContent[Pos], FontSize);
 
-        var bUpdateCurrent = this.Content[Pos].IsNeedUpdateGaps();
+        var bUpdateCurrent = this.DisplayContent[Pos].IsNeedUpdateGaps();
 
         if(bUpdateCurrent || GapsInfo.bUpdate)
         {
@@ -9604,7 +9604,7 @@ ParaRun.prototype.Math_UpdateGaps = function(_CurLine, _CurRange, GapsInfo)
 
         GapsInfo.bUpdate = bUpdateCurrent;
 
-        this.Content[Pos].SetUpdateGaps(false);
+        this.DisplayContent[Pos].SetUpdateGaps(false);
 
     }
 };
