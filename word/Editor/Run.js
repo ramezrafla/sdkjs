@@ -1176,6 +1176,7 @@ ParaRun.prototype.private_UpdatePositionsOnAdd = function(Pos)
     if (this.State.ContentPos >= Pos)
         // when adding Arabic letters as we are RTL we keep current position
         if (!this.isArabic) this.State.ContentPos++;
+        else this.State.ContentPos--;
 
     // Обновляем начало и конец селекта
     if (true === this.State.Selection.Use)
@@ -1223,10 +1224,12 @@ ParaRun.prototype.private_UpdatePositionsOnAdd = function(Pos)
 ParaRun.prototype.private_UpdatePositionsOnRemove = function(Pos, Count)
 {
     // Обновим текущую позицию
-    if (this.State.ContentPos > Pos + Count)
-        this.State.ContentPos -= Count;
-    else if (this.State.ContentPos > Pos)
-        this.State.ContentPos = Pos;
+    if (!this.isArabic) {
+        if (this.State.ContentPos > Pos + Count)
+            this.State.ContentPos -= Count;
+        else if (this.State.ContentPos > Pos)
+            this.State.ContentPos = Pos;
+    }
 
     // Обновим начало и конец селекта
     if (true === this.State.Selection.Use)
@@ -1393,8 +1396,11 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
     if (this.isRendered && this.isArabic) {
         // In Arabic we may also need to recalculate our own width again
         this.RecalcInfo.OnAdd(Pos);
-        this.RecalcInfo.OnAdd(Pos+1);
-        this.CollaborativeMarks.Update_OnAdd( Pos + 1);
+        if (Pos > 0) this.RecalcInfo.OnAdd(Pos-1);
+        if (Pos > 1) this.RecalcInfo.OnAdd(Pos-2);
+        if (Pos < this.Content.length - 1) this.RecalcInfo.OnAdd(Pos+1);
+        if (Pos < this.Content.length - 2) this.RecalcInfo.OnAdd(Pos+2);
+        this.CollaborativeMarks.Update_OnAdd( Pos );
     }
     else {
         this.RecalcInfo.OnAdd(Pos);
@@ -1405,9 +1411,15 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 
 ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
+
+    var OrigCurPos = Pos
+    // for Arabic we need to step over current pos as the current letter is that of previous char
+    if (this.isRendered && this.isArabic)
+        OrigCurPos = this.GetOrigPos(Pos)-1
+
     // Получим массив удаляемых элементов
-    var DeletedItems = this.Content.slice( Pos, Pos + Count );
-	History.Add(new CChangesRunRemoveItem(this, Pos, DeletedItems));
+    var DeletedItems = this.Content.slice( OrigCurPos, OrigCurPos + Count );
+	History.Add(new CChangesRunRemoveItem(this, OrigCurPos, DeletedItems));
 
 	for (var nIndex = 0, nCount = DeletedItems.length; nIndex < nCount; ++nIndex)
 	{
@@ -1415,7 +1427,7 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 			DeletedItems[nIndex].PreDelete();
 	}
 
-    this.Content.splice( Pos, Count );
+    this.Content.splice( OrigCurPos, Count );
     this.ProcessArabicContent()
 
     if (true === UpdatePosition)
@@ -1467,10 +1479,20 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 	this.private_UpdateDocumentOutline();
 	this.private_UpdateTrackRevisionOnChangeContent(true);
 
-    // Обновляем позиции меток совместного редактирования
-    this.CollaborativeMarks.Update_OnRemove( Pos, Count );
-
-    this.RecalcInfo.OnRemove(Pos, Count);
+    if (this.isRendered && this.isArabic) {
+        // In Arabic we may also need to recalculate our own width again
+        this.RecalcInfo.OnAdd(Pos);
+        if (Pos > 0) this.RecalcInfo.OnAdd(Pos-1);
+        if (Pos > 1) this.RecalcInfo.OnAdd(Pos-2);
+        if (Pos < this.Content.length - 1) this.RecalcInfo.OnAdd(Pos+1);
+        if (Pos < this.Content.length - 2) this.RecalcInfo.OnAdd(Pos+2);
+        this.CollaborativeMarks.Update_OnAdd( Pos );
+    }
+    else {
+        this.RecalcInfo.OnAdd(Pos);
+        // Обновляем позиции меток совместного редактирования
+        this.CollaborativeMarks.Update_OnAdd( Pos );
+    }
 };
 
 /**
@@ -11946,7 +11968,6 @@ ParaRun.prototype.ProcessArabicContent = function() {
     if (hasArabic) {
         this.isArabic = true
         resultContent.reverse()
-        // console.log('-'+this.string+'- hasSpaces='+this.HasSpaces() + ' lastSpaceIndex='+this.GetLastSpacePos(), resultContent)
         this.DisplayContent = resultContent
     }
     else {
@@ -11954,11 +11975,6 @@ ParaRun.prototype.ProcessArabicContent = function() {
         resultContent = null
         this.isArabic = false
         this.DisplayContent = this.Content
-    }
-
-    if (this.DisplayContent.length != this.Content.length) {
-        console.error('Not the same length', this)
-        console.trace()
     }
     return this.DisplayContent
 }
