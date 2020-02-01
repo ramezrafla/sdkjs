@@ -289,8 +289,7 @@ CChangesRunAddItem.prototype.Redo = function()
 	var Array_end   = oRun.Content.slice(this.Pos);
 
 	oRun.Content = Array_start.concat(this.Items, Array_end);
-    oRun.ProcessArabicContent && oRun.ProcessArabicContent()
-
+    oRun.ProcessArabicContent()
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
 	oRun.private_UpdateTrackRevisionOnChangeContent(false);
@@ -370,7 +369,7 @@ CChangesRunRemoveItem.prototype.Undo = function()
 	var Array_end   = oRun.Content.slice(this.Pos);
 
 	oRun.Content = Array_start.concat(this.Items, Array_end);
-
+    oRun.ProcessArabicContent()
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
 	oRun.private_UpdateTrackRevisionOnChangeContent(false);

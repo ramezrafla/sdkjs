@@ -800,7 +800,6 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
 {
 	var StartPos = this.Content.length;
 	this.Content = this.Content.concat(Items);
-    this.DisplayContent = this.Content
 
 	History.Add(new CChangesParagraphAddItem(this, StartPos, Items));
 	this.private_UpdateTrackRevisions();
@@ -16219,6 +16218,7 @@ Paragraph.prototype.ProcessArabicContent = function(StartPos, EndPos) {
 
     for (var Pos = StartPos; Pos <= EndPos; Pos++) {
         var Item = this.Content[Pos];
+        Item.Pos = Pos
         if (Item.string) console.log(Item.string)
         var curIsArabic = Item.isArabic === true
         if (curIsArabic === isArabic) {
