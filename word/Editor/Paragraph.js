@@ -2367,47 +2367,11 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 				PDSE.X += NumberingItem.WidthVisible;
 			}
 
-            var Item, Pos
-            var currentStack = []
-            var mainStack = []
-            var currentStart = -1
-            var isArabic = false
-            this.isArabic = this.Content[0].isArabic || (this.Content[1] && this.Content[1].isArabc) || (this.Content[2] && this.Content[2].isArabic)
+            this.ProcessArabicContent(StartPos, EndPos)
 
-            for (Pos = StartPos; Pos <= EndPos; Pos++) {
-                Item = this.Content[Pos];
-                if (Item.string) console.log(Item.string)
-                var curIsArabic = Item.isArabic === true
-                if (curIsArabic === isArabic) {
-                    if (isArabic) currentStack.unshift(Item)
-                    else currentStack.push(Item)
-                }
-                else {
-                    isArabic = curIsArabic
-                    if (currentStack.length) {
-                        if (this.isArabic) mainStack.unshift(currentStack)
-                        else mainStack.push(currentStack)
-                    }
-                    currentStack = [Item]
-                }
-            }
-
-            if (currentStack.length) {
-                if (this.isArabic) mainStack.unshift(currentStack)
-                else mainStack.push(currentStack)
-            }
-
-            var index = 0
-            mainStack.forEach(function(currentStack) {
-                currentStack.forEach(function(Item) {
-                    this.DisplayContent[StartPos+index] = Item
-                    ++index
-                }.bind(this))
-            }.bind(this))
-
-			for (Pos = StartPos; Pos <= EndPos; Pos++)
+			for (var Pos = StartPos; Pos <= EndPos; Pos++)
 			{
-				Item = this.DisplayContent[Pos];
+				var Item = this.DisplayContent[Pos];
 				PDSE.CurPos.Update(Pos, 0);
 				Item.Draw_Elements(PDSE);
 			}
@@ -16243,6 +16207,47 @@ CParagraphRevisionsChangesChecker.prototype.Get_PrChangeUserId = function()
 {
     return this.TextPr.UserId;
 };
+
+Paragraph.prototype.ProcessArabicContent = function(StartPos, EndPos) {
+    if (StartPos == undefined) StartPos = 0
+    if (EndPos == undefined) EndPos = this.Content.length - 1
+    var currentStack = []
+    var mainStack = []
+    var currentStart = -1
+    var isArabic = false
+    this.isArabic = this.Content[0].isArabic || (this.Content[1] && this.Content[1].isArabc) || (this.Content[2] && this.Content[2].isArabic)
+
+    for (var Pos = StartPos; Pos <= EndPos; Pos++) {
+        var Item = this.Content[Pos];
+        if (Item.string) console.log(Item.string)
+        var curIsArabic = Item.isArabic === true
+        if (curIsArabic === isArabic) {
+            if (isArabic) currentStack.unshift(Item)
+            else currentStack.push(Item)
+        }
+        else {
+            isArabic = curIsArabic
+            if (currentStack.length) {
+                if (this.isArabic) mainStack.unshift(currentStack)
+                else mainStack.push(currentStack)
+            }
+            currentStack = [Item]
+        }
+    }
+
+    if (currentStack.length) {
+        if (this.isArabic) mainStack.unshift(currentStack)
+        else mainStack.push(currentStack)
+    }
+
+    var index = 0
+    mainStack.forEach(function(currentStack) {
+        currentStack.forEach(function(Item) {
+            this.DisplayContent[StartPos+index] = Item
+            ++index
+        }.bind(this))
+    }.bind(this))
+}
 
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
