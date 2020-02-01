@@ -165,14 +165,14 @@ ParaRun.prototype.GetId = function()
 	return this.Id;
 };
 ParaRun.prototype.GetOrigPos = function(Pos) {
-    if (!this.isArabic) return Pos
+    if (!this.isArabic || !this.isRendered) return Pos
     if (Pos >= this.DisplayContent.length) return 0
     var Item = this.DisplayContent[Pos]
     var OrigPos = Item.Pos
     return OrigPos && OrigPos > -1 ? OrigPos : Pos
 }
 ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
-    if (!this.isArabic) return [Pos1, Pos2]
+    if (!this.isArabic || !this.isRendered) return [Pos1, Pos2]
     var OrigPos1 = this.GetOrigPos(Pos1)
     var OrigPos2 = this.GetOrigPos(Pos2)
     if (OrigPos1 < OrigPos2) return [OrigPos1, OrigPos2]
@@ -270,7 +270,6 @@ ParaRun.prototype.Copy = function(Selected, oPr, isCopyReviewPr)
 	for (var CurPos = StartPos, AddedPos = 0; CurPos < EndPos; CurPos++)
 	{
 		var Item = this.Content[CurPos];
-        //console.log(Item.Char)
 
 		if (para_NewLine === Item.Type
 			&& oPr
@@ -299,7 +298,6 @@ ParaRun.prototype.Copy = function(Selected, oPr, isCopyReviewPr)
 		}
 	}
 
-    // console.log(NewRun)
     return NewRun;
 };
 
@@ -529,7 +527,7 @@ ParaRun.prototype.Add = function(Item, bMath)
 	}
 
     // we split Run's along space boundaries to allow for RTL positioning
-    if (Item.Type == para_Space && !this.Is_Empty())
+    if (Item.Type == para_Space && this.Content.length)
     {
         var NewRun = this.private_SplitRunInCurPos();
         if (NewRun)
@@ -670,6 +668,7 @@ ParaRun.prototype.Add = function(Item, bMath)
 		if (this.Type === para_Run && Item.CanStartAutoCorrect())
 			this.ProcessAutoCorrect(this.State.ContentPos - 1);
 	}
+
 };
 
 /**
@@ -1175,7 +1174,8 @@ ParaRun.prototype.private_UpdatePositionsOnAdd = function(Pos)
 {
     // Обновляем текущую позицию
     if (this.State.ContentPos >= Pos)
-        this.State.ContentPos++;
+        // when adding Arabic letters as we are RTL we keep current position
+        if (!this.isArabic) this.State.ContentPos++;
 
     // Обновляем начало и конец селекта
     if (true === this.State.Selection.Use)
@@ -1337,8 +1337,13 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 	if (Item.SetParent)
 		Item.SetParent(this);
 
-	History.Add(new CChangesRunAddItem(this, Pos, [Item], true));
-    this.Content.splice( Pos, 0, Item );
+    var OrigCurPos = Pos
+    // for Arabic we need to step over current pos as the current letter is that of previous char
+    if (this.isRendered && this.isArabic)
+        OrigCurPos = this.GetOrigPos(Pos)+1
+
+    History.Add(new CChangesRunAddItem(this, OrigCurPos, [Item], true));
+    this.Content.splice( OrigCurPos, 0, Item );
     this.ProcessArabicContent()
 
     if (true === UpdatePosition)
@@ -1384,10 +1389,18 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 	this.private_UpdateDocumentOutline();
     this.private_UpdateTrackRevisionOnChangeContent(true);
 
-    // Обновляем позиции меток совместного редактирования
-    this.CollaborativeMarks.Update_OnAdd( Pos );
-
-    this.RecalcInfo.OnAdd(Pos);
+    // the inserted character is after (+1) the current char
+    if (this.isRendered && this.isArabic) {
+        // In Arabic we may also need to recalculate our own width again
+        this.RecalcInfo.OnAdd(Pos);
+        this.RecalcInfo.OnAdd(Pos+1);
+        this.CollaborativeMarks.Update_OnAdd( Pos + 1);
+    }
+    else {
+        this.RecalcInfo.OnAdd(Pos);
+        // Обновляем позиции меток совместного редактирования
+        this.CollaborativeMarks.Update_OnAdd( Pos );
+    }
 };
 
 ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
@@ -5700,6 +5713,7 @@ ParaRun.prototype.Draw_Elements = function(PDSE)
     }
     // Обновляем позицию
     PDSE.X = X;
+    this.isRendered = true
 };
 
 ParaRun.prototype.Draw_Lines = function(PDSL)
