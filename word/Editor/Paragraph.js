@@ -2367,7 +2367,6 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 			}
 
             this.ProcessArabicContent(StartPos, EndPos)
-
 			for (var Pos = StartPos; Pos <= EndPos; Pos++)
 			{
 				var Item = this.DisplayContent[Pos];
@@ -16208,6 +16207,7 @@ CParagraphRevisionsChangesChecker.prototype.Get_PrChangeUserId = function()
 };
 
 Paragraph.prototype.ProcessArabicContent = function(StartPos, EndPos) {
+    if (StartPos == undefined && EndPos == undefined) this.DisplayContent = []
     if (StartPos == undefined) StartPos = 0
     if (EndPos == undefined) EndPos = this.Content.length - 1
     var currentStack = []
@@ -16219,7 +16219,6 @@ Paragraph.prototype.ProcessArabicContent = function(StartPos, EndPos) {
     for (var Pos = StartPos; Pos <= EndPos; Pos++) {
         var Item = this.Content[Pos];
         Item.Pos = Pos
-        if (Item.string) console.log(Item.string)
         var curIsArabic = Item.isArabic === true
         if (curIsArabic === isArabic) {
             if (isArabic) currentStack.unshift(Item)
