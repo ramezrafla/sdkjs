@@ -179,6 +179,8 @@ function Paragraph(DrawingDocument, Parent, bFromPresentation)
 
     // Добавляем в контент элемент "конец параграфа"
     this.Content = [];
+    this.DisplayContent = this.Content
+
     var EndRun = new ParaRun(this);
     EndRun.Add_ToContent( 0, new ParaEnd() );
 
@@ -781,6 +783,7 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
 {
 	var StartPos = this.Content.length;
 	this.Content = this.Content.concat(Items);
+    this.DisplayContent = this.Content
 
 	History.Add(new CChangesParagraphAddItem(this, StartPos, Items));
 	this.private_UpdateTrackRevisions();
@@ -2110,6 +2113,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 
 	var StartLine = this.Pages[CurPage].StartLine;
 	var EndLine   = this.Pages[CurPage].EndLine;
+    this.DisplayContent = []
 
 	for (var CurLine = StartLine; CurLine <= EndLine; CurLine++)
 	{
@@ -2346,11 +2350,48 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 				PDSE.X += NumberingItem.WidthVisible;
 			}
 
-			for (var Pos = StartPos; Pos <= EndPos; Pos++)
-			{
-				var Item = this.Content[Pos];
-				PDSE.CurPos.Update(Pos, 0);
+            var Item, Pos
+            var currentStack = []
+            var mainStack = []
+            var currentStart = -1
+            var isArabic = false
+            var mainIsArabic = this.Content[0].isArabic || (this.Content[1] && this.Content[1].isArabc) || (this.Content[2] && this.Content[2].isArabic)
 
+            for (Pos = StartPos; Pos <= EndPos; Pos++) {
+                Item = this.Content[Pos];
+                if (Item.string) console.log(Item.string)
+                var curIsArabic = Item.isArabic === true
+                if (curIsArabic === isArabic) {
+                    if (isArabic) currentStack.unshift(Item)
+                    else currentStack.push(Item)
+                }
+                else {
+                    isArabic = curIsArabic
+                    if (currentStack.length) {
+                        if (mainIsArabic) mainStack.unshift(currentStack)
+                        else mainStack.push(currentStack)
+                    }
+                    currentStack = [Item]
+                }
+            }
+
+            if (currentStack.length) {
+                if (mainIsArabic) mainStack.unshift(currentStack)
+                else mainStack.push(currentStack)
+            }
+
+            var index = 0
+            mainStack.forEach(function(currentStack) {
+                currentStack.forEach(function(Item) {
+                    this.DisplayContent[StartPos+index] = Item
+                    ++index
+                }.bind(this))
+            }.bind(this))
+
+			for (Pos = StartPos; Pos <= EndPos; Pos++)
+			{
+				Item = this.DisplayContent[Pos];
+				PDSE.CurPos.Update(Pos, 0);
 				Item.Draw_Elements(PDSE);
 			}
 		}
@@ -11502,6 +11543,7 @@ Paragraph.prototype.Read_FromBinary2 = function(Reader)
 				Element.SetParagraph(this);
 		}
 	}
+    this.DisplayContent = this.Content
 
 	AscCommon.CollaborativeEditing.Add_NewObject(this);
 
@@ -15940,6 +15982,7 @@ function CParagraphStartState(Paragraph)
     {
         this.Content.push(Paragraph.Content[i]);
     }
+    this.DisplayContent = this.Content
 }
 
 function CParagraphTabsCounter()
