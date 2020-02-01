@@ -211,6 +211,23 @@ Paragraph.prototype.GetType = function()
 {
 	return type_Paragraph;
 };
+ParaRun.prototype.GetOrigPos = function(Pos) {
+    if (!this.isArabic || !this.isRendered) return Pos
+    if (Pos >= this.DisplayContent.length) return 0
+    var Item = this.DisplayContent[Pos]
+    var OrigPos = Item.Pos
+    return OrigPos && OrigPos > -1 ? OrigPos : Pos
+}
+ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
+    if (!this.isArabic || !this.isRendered) return [Pos1, Pos2]
+    var OrigPos1 = this.GetOrigPos(Pos1)
+    var OrigPos2 = this.GetOrigPos(Pos2)
+    if (OrigPos1 < OrigPos2) return [OrigPos1, OrigPos2]
+    return [OrigPos2, OrigPos1]
+}
+ParaRun.prototype.ResetContent = function() {
+    this.DisplayContent = this.Content
+}
 Paragraph.prototype.Save_StartState = function()
 {
 	this.StartState = new CParagraphStartState(this);
@@ -2355,7 +2372,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
             var mainStack = []
             var currentStart = -1
             var isArabic = false
-            var mainIsArabic = this.Content[0].isArabic || (this.Content[1] && this.Content[1].isArabc) || (this.Content[2] && this.Content[2].isArabic)
+            this.isArabic = this.Content[0].isArabic || (this.Content[1] && this.Content[1].isArabc) || (this.Content[2] && this.Content[2].isArabic)
 
             for (Pos = StartPos; Pos <= EndPos; Pos++) {
                 Item = this.Content[Pos];
@@ -2368,7 +2385,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
                 else {
                     isArabic = curIsArabic
                     if (currentStack.length) {
-                        if (mainIsArabic) mainStack.unshift(currentStack)
+                        if (this.isArabic) mainStack.unshift(currentStack)
                         else mainStack.push(currentStack)
                     }
                     currentStack = [Item]
@@ -2376,7 +2393,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
             }
 
             if (currentStack.length) {
-                if (mainIsArabic) mainStack.unshift(currentStack)
+                if (this.isArabic) mainStack.unshift(currentStack)
                 else mainStack.push(currentStack)
             }
 
@@ -2401,6 +2418,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 			pGraphics.End_Command();
 		}
 	}
+    this.isRendered = true
 };
 Paragraph.prototype.Internal_Draw_5 = function(CurPage, pGraphics, Pr, BgColor)
 {
@@ -2457,7 +2475,7 @@ Paragraph.prototype.Internal_Draw_5 = function(CurPage, pGraphics, Pr, BgColor)
 				PDSL.CurPos.Update(Pos, 0);
 				PDSL.CurDepth = 1;
 
-				var Item = this.Content[Pos];
+				var Item = this.DisplayContent[Pos];
 				Item.Draw_Lines(PDSL);
 			}
 		}
