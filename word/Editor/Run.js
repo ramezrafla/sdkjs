@@ -11902,6 +11902,15 @@ var arabicChars = {
   }
 }
 
+// converting chars to their ascii codes
+Object.keys(arabicChars).forEach(function(key) {
+    var o = arabicChars[key]
+    o.initial = o.initial.charCodeAt(0)
+    o.isolated = o.isolated.charCodeAt(0)
+    o.medial = o.medial.charCodeAt(0)
+    o.final = o.final.charCodeAt(0)
+})
+
 ParaRun.prototype.ProcessArabicContent = function() {
 
     var isArabic = false
@@ -11922,26 +11931,26 @@ ParaRun.prototype.ProcessArabicContent = function() {
                 isArabic = true
                 hasArabic = true
                 start = i
-                this.Content[i].DisplayValue = arabicChar.initial.charCodeAt(0)
+                this.Content[i].DisplayValue = arabicChar.initial
                 this.Content[i].break = arabicChar.break
-                this.Content[i].Char = String.fromCharCode(value)
-                this.Content[i].DisplayChar = String.fromCharCode(this.Content[i].DisplayValue)
+                //this.Content[i].Char = String.fromCharCode(value)
+                //this.Content[i].DisplayChar = String.fromCharCode(this.Content[i].DisplayValue)
             }
             else {
                 if (arabicChar) {
-                    this.Content[i].DisplayValue = this.Content[i-1].break ? arabicChar.initial.charCodeAt(0) : arabicChar.medial.charCodeAt(0)
+                    this.Content[i].DisplayValue = this.Content[i-1].break ? arabicChar.initial : arabicChar.medial
                     this.Content[i].break = arabicChar.break
-                    this.Content[i].Char = String.fromCharCode(value)
-                    this.Content[i].DisplayChar = String.fromCharCode(this.Content[i].DisplayValue)
+                    //this.Content[i].Char = String.fromCharCode(value)
+                    //this.Content[i].DisplayChar = String.fromCharCode(this.Content[i].DisplayValue)
                 }
                 // period or comma
                 else {
                     isArabic = false
                     diff = i - start
                     arabicChar = arabicChars[this.Content[i-1].Value]
-                    if (diff == 1) this.Content[i-1].DisplayValue = arabicChar.isolated.charCodeAt(0)
-                    else this.Content[i-1].DisplayValue = this.Content[i-2].break ? arabicChar.isolated.charCodeAt(0) : arabicChar.final.charCodeAt(0)
-                    this.Content[i-1].DisplayChar = String.fromCharCode(this.Content[i-1].DisplayValue)
+                    if (diff == 1) this.Content[i-1].DisplayValue = arabicChar.isolated
+                    else this.Content[i-1].DisplayValue = this.Content[i-2].break ? arabicChar.isolated : arabicChar.final
+                    //this.Content[i-1].DisplayChar = String.fromCharCode(this.Content[i-1].DisplayValue)
                 }
             }
         }
@@ -11951,9 +11960,9 @@ ParaRun.prototype.ProcessArabicContent = function() {
     if (isArabic) {
         arabicChar = arabicChars[this.Content[len-1].Value]
         if (arabicChar) {
-            if (len == 1) this.Content[0].DisplayValue = arabicChar.isolated.charCodeAt(0)
-            else this.Content[len-1].DisplayValue = this.Content[len-2].break ? arabicChar.isolated.charCodeAt(0) : arabicChar.final.charCodeAt(0)
-            this.Content[len-1].DisplayChar = String.fromCharCode(this.Content[len-1].DisplayValue)
+            if (len == 1) this.Content[0].DisplayValue = arabicChar.isolated
+            else this.Content[len-1].DisplayValue = this.Content[len-2].break ? arabicChar.isolated : arabicChar.final
+            //this.Content[len-1].DisplayChar = String.fromCharCode(this.Content[len-1].DisplayValue)
         }
     }
 
@@ -11963,6 +11972,8 @@ ParaRun.prototype.ProcessArabicContent = function() {
     if (hasArabic) {
         this.isArabic = true
         resultContent.reverse()
+        // moving space to beginning
+        if (resultContent[len-1].Type == para_Space) resultContent.unshift(resultContent.pop())
         this.DisplayContent = resultContent
     }
     else {
@@ -11971,6 +11982,7 @@ ParaRun.prototype.ProcessArabicContent = function() {
         this.isArabic = false
         this.DisplayContent = this.Content
     }
+
     return this.DisplayContent
 }
 
