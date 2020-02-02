@@ -377,40 +377,40 @@ Paragraph.prototype.Copy2 = function(Parent)
  */
 Paragraph.prototype.GetFirstRunPr = function()
 {
-	if (this.Content.length <= 0 || para_Run !== this.Content[0].Type)
+	if (this.DisplayContent.length <= 0 || para_Run !== this.DisplayContent[0].Type)
 		return this.TextPr.Value.Copy();
 
-	return this.Content[0].Pr.Copy();
+	return this.DisplayContent[0].Pr.Copy();
 };
 Paragraph.prototype.Get_FirstTextPr = function()
 {
-	if (this.Content.length <= 0 || para_Run !== this.Content[0].Type)
+	if (this.DisplayContent.length <= 0 || para_Run !== this.DisplayContent[0].Type)
 		return this.Get_CompiledPr2(false).TextPr;
 
-	return this.Content[0].Get_CompiledPr();
+	return this.DisplayContent[0].Get_CompiledPr();
 };
 Paragraph.prototype.Get_FirstTextPr2 = function()
 {
 	var HyperlinkPr;
-	for(var i = 0; i < this.Content.length; ++i)
+	for(var i = 0; i < this.DisplayContent.length; ++i)
 	{
-		if(!this.Content[i].Is_Empty())
+		if(!this.DisplayContent[i].Is_Empty())
 		{
-			if(para_Run === this.Content[i].Type)
+			if(para_Run === this.DisplayContent[i].Type)
 			{
-				return this.Content[i].Get_CompiledPr();
+				return this.DisplayContent[i].Get_CompiledPr();
 			}
-			else if(para_Hyperlink === this.Content[i].Type)
+			else if(para_Hyperlink === this.DisplayContent[i].Type)
 			{
-                HyperlinkPr =  this.Content[i].Get_FirstTextPr2();
+                HyperlinkPr =  this.DisplayContent[i].Get_FirstTextPr2();
                 if(HyperlinkPr)
 				{
 					return HyperlinkPr;
 				}
 			}
-			else if(para_Math === this.Content[i].Type)
+			else if(para_Math === this.DisplayContent[i].Type)
 			{
-				return this.Content[i].GetFirstRPrp();
+				return this.DisplayContent[i].GetFirstRPrp();
 			}
 		}
 	}
@@ -421,10 +421,10 @@ Paragraph.prototype.GetAllDrawingObjects = function(DrawingObjs)
 	if (undefined === DrawingObjs)
 		DrawingObjs = [];
 
-	var Count = this.Content.length;
+	var Count = this.DisplayContent.length;
 	for (var Pos = 0; Pos < Count; Pos++)
 	{
-		var Item = this.Content[Pos];
+		var Item = this.DisplayContent[Pos];
 		if (Item.GetAllDrawingObjects)
 			Item.GetAllDrawingObjects(DrawingObjs);
 	}
@@ -436,10 +436,10 @@ Paragraph.prototype.GetAllComments = function(List)
 	if (undefined === List)
 		List = [];
 
-	var Len = this.Content.length;
+	var Len = this.DisplayContent.length;
 	for (var Pos = 0; Pos < Len; Pos++)
 	{
-		var Item = this.Content[Pos];
+		var Item = this.DisplayContent[Pos];
 
 		if (para_Comment === Item.Type)
 			List.push({Comment : Item, Paragraph : this});
@@ -452,10 +452,10 @@ Paragraph.prototype.GetAllMaths = function(List)
 	if (undefined === List)
 		List = [];
 
-	var Len = this.Content.length;
+	var Len = this.DisplayContent.length;
 	for (var Pos = 0; Pos < Len; Pos++)
 	{
-		var Item = this.Content[Pos];
+		var Item = this.DisplayContent[Pos];
 		if (para_Math === Item.Type)
 			List.push({Math : Item, Paragraph : this});
 	}
@@ -464,11 +464,11 @@ Paragraph.prototype.GetAllMaths = function(List)
 };
 Paragraph.prototype.GetAllParagraphs = function(Props, ParaArray)
 {
-	var ContentLen = this.Content.length;
+	var ContentLen = this.DisplayContent.length;
 	for (var CurPos = 0; CurPos < ContentLen; CurPos++)
 	{
-		if (this.Content[CurPos].GetAllParagraphs)
-			this.Content[CurPos].GetAllParagraphs(Props, ParaArray);
+		if (this.DisplayContent[CurPos].GetAllParagraphs)
+			this.DisplayContent[CurPos].GetAllParagraphs(Props, ParaArray);
 	}
 
 	if (true === Props.All)
