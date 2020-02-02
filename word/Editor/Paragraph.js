@@ -698,8 +698,10 @@ Paragraph.prototype.CopyPr_Open = function(OtherParagraph)
  */
 Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bCorrectPos)
 {
-	History.Add(new CChangesParagraphAddItem(this, Pos, [Item]));
-	this.Content.splice(Pos, 0, Item);
+    var OrigPos = this.GetOrigPos(Pos)
+	History.Add(new CChangesParagraphAddItem(this, OrigPos, [Item]));
+	this.Content.splice(OrigPos, 0, Item);
+    this.GenerateDisplayContent()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -821,7 +823,7 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
 Paragraph.prototype.Internal_Content_Remove = function(Pos)
 {
     var OrigPos = this.GetOrigPos(Pos)
-	var Item = this.Content[Pos];
+	var Item = this.Content[OrigPos];
 	History.Add(new CChangesParagraphRemoveItem(this, OrigPos, [Item]));
 
 	if (Item.PreDelete)
