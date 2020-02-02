@@ -211,22 +211,19 @@ Paragraph.prototype.GetType = function()
 {
 	return type_Paragraph;
 };
-ParaRun.prototype.GetOrigPos = function(Pos) {
+Paragraph.prototype.GetOrigPos = function(Pos) {
     if (!this.isArabic || !this.isRendered) return Pos
     if (Pos >= this.DisplayContent.length) return 0
     var Item = this.DisplayContent[Pos]
     var OrigPos = Item.Pos
     return OrigPos && OrigPos > -1 ? OrigPos : Pos
 }
-ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
+Paragraph.prototype.GetOrigRange = function(Pos1,Pos2) {
     if (!this.isArabic || !this.isRendered) return [Pos1, Pos2]
     var OrigPos1 = this.GetOrigPos(Pos1)
     var OrigPos2 = this.GetOrigPos(Pos2)
     if (OrigPos1 < OrigPos2) return [OrigPos1, OrigPos2]
     return [OrigPos2, OrigPos1]
-}
-ParaRun.prototype.ResetContent = function() {
-    this.DisplayContent = this.Content
 }
 Paragraph.prototype.Save_StartState = function()
 {
@@ -823,13 +820,15 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
  */
 Paragraph.prototype.Internal_Content_Remove = function(Pos)
 {
+    var OrigPos = this.GetOrigPos(Pos)
 	var Item = this.Content[Pos];
-	History.Add(new CChangesParagraphRemoveItem(this, Pos, [Item]));
+	History.Add(new CChangesParagraphRemoveItem(this, OrigPos, [Item]));
 
 	if (Item.PreDelete)
 		Item.PreDelete();
 
-	this.Content.splice(Pos, 1);
+	this.Content.splice(OrigPos, 1);
+    this.GenerateDisplayContent()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -910,11 +909,13 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos)
  */
 Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 {
+
+    var OrigPos = this.GetOrigPos(Pos)
 	var CommentsToDelete = [];
 	if (true === this.DeleteCommentOnRemove && null !== this.LogicDocument && null != this.LogicDocument.Comments)
 	{
 		var DocumentComments = this.LogicDocument.Comments;
-		for (var Index = Pos; Index < Pos + Count; Index++)
+		for (var Index = OrigPos; Index < Pos + Count; Index++)
 		{
 			var Item = this.Content[Index];
 			if (para_Comment === Item.Type)
@@ -935,14 +936,15 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 		}
 	}
 
-	for (var nIndex = Pos; nIndex < Pos + Count; ++nIndex)
+	for (var nIndex = OrigPos; nIndex < Pos + Count; ++nIndex)
 	{
 		if (this.Content[nIndex].PreDelete)
 			this.Content[nIndex].PreDelete();
 	}
 
-	var DeletedItems = this.Content.slice(Pos, Pos + Count);
-	History.Add(new CChangesParagraphRemoveItem(this, Pos, DeletedItems));
+	var DeletedItems = this.Content.slice(OrigPos, OrigPos + Count);
+	History.Add(new CChangesParagraphRemoveItem(this, OrigPos, DeletedItems));
+    this.GenerateDisplayContent()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks(DeletedItems);
 	this.UpdateDocumentOutline();
@@ -2366,7 +2368,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 				PDSE.X += NumberingItem.WidthVisible;
 			}
 
-            this.ProcessArabicContent(StartPos, EndPos)
+            this.GenerateDisplayContent(StartPos, EndPos)
 			for (var Pos = StartPos; Pos <= EndPos; Pos++)
 			{
 				var Item = this.DisplayContent[Pos];
@@ -16206,7 +16208,7 @@ CParagraphRevisionsChangesChecker.prototype.Get_PrChangeUserId = function()
     return this.TextPr.UserId;
 };
 
-Paragraph.prototype.ProcessArabicContent = function(StartPos, EndPos) {
+Paragraph.prototype.GenerateDisplayContent = function(StartPos, EndPos) {
     if (StartPos == undefined && EndPos == undefined) this.DisplayContent = []
     if (StartPos == undefined) StartPos = 0
     if (EndPos == undefined) EndPos = this.Content.length - 1

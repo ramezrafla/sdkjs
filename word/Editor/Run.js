@@ -1342,7 +1342,7 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 
     History.Add(new CChangesRunAddItem(this, OrigCurPos, [Item], true));
     this.Content.splice( OrigCurPos, 0, Item );
-    this.ProcessArabicContent()
+    this.GenerateDisplayContent()
 
     if (true === UpdatePosition)
         this.private_UpdatePositionsOnAdd(Pos);
@@ -1422,7 +1422,7 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 	}
 
     this.Content.splice( OrigCurPos, Count );
-    this.ProcessArabicContent()
+    this.GenerateDisplayContent()
 
     if (true === UpdatePosition)
         this.private_UpdatePositionsOnRemove(Pos, Count);
@@ -1503,7 +1503,7 @@ ParaRun.prototype.ConcatToContent = function(arrNewItems)
 
 	var StartPos = this.Content.length;
 	this.Content = this.Content.concat(arrNewItems);
-    this.ProcessArabicContent()
+    this.GenerateDisplayContent()
 
 	History.Add(new CChangesRunAddItem(this, StartPos, arrNewItems, false));
 
@@ -5550,7 +5550,7 @@ ParaRun.prototype.Draw_Elements = function(PDSE)
 
 	var isHiddenCFPart = PDSE.ComplexFields.IsComplexFieldCode();
 
-    this.ProcessArabicContent()
+    this.GenerateDisplayContent()
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
 		var Item = this.private_CheckInstrText(this.DisplayContent[Pos]);
@@ -8824,7 +8824,7 @@ ParaRun.prototype.Read_FromBinary2 = function(Reader)
             if ( null !== Element )
                 this.Content.push( Element );
         }
-        this.ProcessArabicContent()
+        this.GenerateDisplayContent()
     }
 };
 
@@ -11398,7 +11398,7 @@ function CParaRunStartState(Run)
     {
         this.Content.push(Run.Content[i]);
     }
-    this.ProcessArabicContent && this.ProcessArabicContent()
+    this.GenerateDisplayContent && this.GenerateDisplayContent()
 }
 
 function CReviewInfo()
@@ -11911,7 +11911,7 @@ Object.keys(arabicChars).forEach(function(key) {
     o.final = o.final.charCodeAt(0)
 })
 
-ParaRun.prototype.ProcessArabicContent = function() {
+ParaRun.prototype.GenerateDisplayContent = function() {
 
     var isArabic = false
     var hasArabic = false
