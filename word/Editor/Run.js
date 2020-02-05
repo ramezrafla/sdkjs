@@ -178,9 +178,6 @@ ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
     if (OrigPos1 < OrigPos2) return [OrigPos1, OrigPos2]
     return [OrigPos2, OrigPos1]
 }
-ParaRun.prototype.ResetContent = function() {
-    this.DisplayContent = this.Content
-}
 ParaRun.prototype.HasSpaces = function() {
   var spacesCount = 0
   var Pos = 1
@@ -304,11 +301,11 @@ ParaRun.prototype.Copy2 = function()
     NewRun.Set_Pr( this.Pr.Copy() );
 
     var StartPos = 0;
-    var EndPos   = this.Content.length;
+    var EndPos   = this.DisplayContent.length;
 
     for ( var CurPos = StartPos; CurPos < EndPos; CurPos++ )
     {
-        var Item = this.Content[CurPos];
+        var Item = this.DisplayContent[CurPos];
         NewRun.Add_ToContent( CurPos - StartPos, Item.Copy(), false );
     }
     return NewRun;
@@ -361,10 +358,10 @@ ParaRun.prototype.GetSelectedContent = function(oSelectedContent)
 
 ParaRun.prototype.GetAllDrawingObjects = function(DrawingObjs)
 {
-    var Count = this.Content.length;
+    var Count = this.DisplayContent.length;
     for ( var Index = 0; Index < Count; Index++ )
     {
-        var Item = this.Content[Index];
+        var Item = this.DisplayContent[Index];
 
         if ( para_Drawing === Item.Type )
         {
@@ -707,7 +704,7 @@ ParaRun.prototype.CheckTrackRevisionsBeforeAdd = function()
 			}
 		}
 
-		if (this.Content.length === CurPos && (RunPos < Parent.Content.length - 2 || (RunPos < Parent.Content.length - 1 && !(Parent instanceof Paragraph))))
+		if (this.DisplayContent.length === CurPos && (RunPos < Parent.Content.length - 2 || (RunPos < Parent.Content.length - 1 && !(Parent instanceof Paragraph))))
 		{
 			var NextElement = Parent.Content[RunPos + 1];
 			if (para_Run === NextElement.Type && DstReviewType === NextElement.GetReviewType() && true === this.Pr.Is_Equal(NextElement.Pr) && NextElement.ReviewInfo && true === NextElement.ReviewInfo.IsCurrentUser())
@@ -726,7 +723,7 @@ ParaRun.prototype.CheckTrackRevisionsBeforeAdd = function()
 		{
 			Parent.Add_ToContent(RunPos, NewRun);
 		}
-		else if (this.Content.length === CurPos)
+		else if (this.DisplayContent.length === CurPos)
 		{
 			Parent.Add_ToContent(RunPos + 1, NewRun);
 		}
@@ -775,7 +772,7 @@ ParaRun.prototype.private_SplitRunInCurPos = function()
 		{
 			Parent.Add_ToContent(RunPos, NewRun);
 		}
-		else if (this.Content.length === CurPos)
+		else if (this.DisplayContent.length === CurPos)
 		{
 			Parent.Add_ToContent(RunPos + 1, NewRun);
 		}
@@ -798,8 +795,8 @@ ParaRun.prototype.private_IsCurPosNearFootnoteReference = function()
 		var nCurPos = this.State.ContentPos;
 
 		if (this.Get_RStyle() === oStyles.GetDefaultFootnoteReference()
-			&& ((nCurPos > 0 && this.Content[nCurPos - 1] && (para_FootnoteRef === this.Content[nCurPos - 1].Type || para_FootnoteReference === this.Content[nCurPos - 1].Type))
-			|| (nCurPos < this.Content.length && this.Content[nCurPos] && (para_FootnoteRef === this.Content[nCurPos].Type || para_FootnoteReference === this.Content[nCurPos].Type))))
+			&& ((nCurPos > 0 && this.DisplayContent[nCurPos - 1] && (para_FootnoteRef === this.DisplayContent[nCurPos - 1].Type || para_FootnoteReference === this.DisplayContent[nCurPos - 1].Type))
+			|| (nCurPos < this.DisplayContent.length && this.DisplayContent[nCurPos] && (para_FootnoteRef === this.DisplayContent[nCurPos].Type || para_FootnoteReference === this.DisplayContent[nCurPos].Type))))
 			return true;
 	}
 
@@ -1219,12 +1216,10 @@ ParaRun.prototype.private_UpdatePositionsOnAdd = function(Pos)
 ParaRun.prototype.private_UpdatePositionsOnRemove = function(Pos, Count)
 {
     // Обновим текущую позицию
-    if (!this.isArabic) {
-        if (this.State.ContentPos > Pos + Count)
-            this.State.ContentPos -= Count;
-        else if (this.State.ContentPos > Pos)
-            this.State.ContentPos = Pos;
-    }
+    if (this.State.ContentPos > Pos + Count)
+        this.State.ContentPos -= Count;
+    else if (this.State.ContentPos > Pos)
+        this.State.ContentPos = Pos;
 
     // Обновим начало и конец селекта
     if (true === this.State.Selection.Use)
@@ -1335,10 +1330,7 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 	if (Item.SetParent)
 		Item.SetParent(this);
 
-    var OrigCurPos = Pos
-    // for Arabic we need to step over current pos as the current letter is that of previous char
-    if (this.isRendered && this.isArabic)
-        OrigCurPos = this.GetOrigPos(Pos)+1
+    var OrigCurPos = this.GetOrigPos(Pos)
 
     History.Add(new CChangesRunAddItem(this, OrigCurPos, [Item], true));
     this.Content.splice( OrigCurPos, 0, Item );
@@ -1407,9 +1399,11 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
 
-    var OrigCurPos = Pos
-    if (this.isRendered && this.isArabic)
-        OrigCurPos = this.GetOrigPos(Pos)+1
+    var OrigCurPos = this.GetOrigPos(Pos)
+    if (this.isRendered) {
+        console.log('Remove_FromContent',Pos,OrigCurPos)
+        console.trace()
+    }
 
     // Получим массив удаляемых элементов
     var DeletedItems = this.Content.slice( OrigCurPos, OrigCurPos + Count );
@@ -2611,7 +2605,7 @@ ParaRun.prototype.Can_AddDropCap = function()
 
 ParaRun.prototype.Get_TextForDropCap = function(DropCapText, UseContentPos, ContentPos, Depth)
 {
-    var EndPos = ( true === UseContentPos ? ContentPos.Get(Depth) : this.Content.length );
+    var EndPos = ( true === UseContentPos ? this.GetOrigPos(ContentPos.Get(Depth)) : this.Content.length );
 
     for ( var Pos = 0; Pos < EndPos; Pos++ )
     {
@@ -2646,11 +2640,11 @@ ParaRun.prototype.Get_TextForDropCap = function(DropCapText, UseContentPos, Cont
 
 ParaRun.prototype.Get_StartTabsCount = function(TabsCounter)
 {
-    var ContentLen = this.Content.length;
+    var ContentLen = this.DisplayContent.length;
 
     for ( var Pos = 0; Pos < ContentLen; Pos++ )
     {
-        var Item = this.Content[Pos];
+        var Item = this.DisplayContent[Pos];
         var ItemType = Item.Type;
 
         if ( para_Tab === ItemType )
@@ -4843,7 +4837,7 @@ ParaRun.prototype.Check_Range_OnlyMath = function(Checker, _CurRange, _CurLine)
 
     for (var Pos = StartPos; Pos < EndPos; Pos++)
     {
-        var Item = this.Content[Pos];
+        var Item = this.DisplayContent[Pos];
         var ItemType = Item.Type;
 
         if (para_End === ItemType || para_NewLine === ItemType || (para_Drawing === ItemType && true !== Item.Is_Inline()))
@@ -6311,7 +6305,7 @@ ParaRun.prototype.Get_ParaContentPosByXY = function(SearchPos, Depth, _CurLine, 
 			if (this.Type == para_Math_Run)
 			{
 				var PosLine    = this.ParaMath.GetLinePosition(_CurLine, _CurRange);
-				var loc        = this.Content[CurPos].GetLocationOfLetter();
+				var loc        = this.DisplayContent[CurPos].GetLocationOfLetter();
 				SearchPos.CurX = PosLine.x + loc.x; // позиция формулы в строке + смещение буквы в контенте
 			}
 
@@ -6944,7 +6938,7 @@ ParaRun.prototype.Set_SelectionContentPos = function(StartContentPos, EndContent
     switch (StartFlag)
     {
         case  1: StartPos = 0; break;
-        case -1: StartPos = this.Content.length; break;
+        case -1: StartPos = this.DisplayContent.length; break;
         case  0: StartPos = StartContentPos.Get(Depth); break;
     }
 
@@ -6952,7 +6946,7 @@ ParaRun.prototype.Set_SelectionContentPos = function(StartContentPos, EndContent
     switch (EndFlag)
     {
         case  1: EndPos = 0; break;
-        case -1: EndPos = this.Content.length; break;
+        case -1: EndPos = this.DisplayContent.length; break;
         case  0: EndPos = EndContentPos.Get(Depth); break;
     }
 
@@ -6967,7 +6961,7 @@ ParaRun.prototype.SetContentSelection = function(StartDocPos, EndDocPos, Depth, 
     switch (StartFlag)
     {
         case  1: StartPos = 0; break;
-        case -1: StartPos = this.Content.length; break;
+        case -1: StartPos = this.DisplayContent.length; break;
         case  0: StartPos = StartDocPos[Depth].Position; break;
     }
 
@@ -6975,7 +6969,7 @@ ParaRun.prototype.SetContentSelection = function(StartDocPos, EndDocPos, Depth, 
     switch (EndFlag)
     {
         case  1: EndPos = 0; break;
-        case -1: EndPos = this.Content.length; break;
+        case -1: EndPos = this.DisplayContent.length; break;
         case  0: EndPos = EndDocPos[Depth].Position; break;
     }
 
@@ -6990,7 +6984,7 @@ ParaRun.prototype.SetContentPosition = function(DocPos, Depth, Flag)
     switch (Flag)
     {
         case  1: Pos = 0; break;
-        case -1: Pos = this.Content.length; break;
+        case -1: Pos = this.DisplayContent.length; break;
         case  0: Pos = DocPos[Depth].Position; break;
     }
 
@@ -7101,7 +7095,7 @@ ParaRun.prototype.SkipAnchorsAtSelectionStart = function(Direction)
 		}
 	}
 
-	if (nEndPos < this.Content.length)
+	if (nEndPos < this.DisplayContent.length)
 		return false;
 
 	return true;
@@ -7596,10 +7590,10 @@ ParaRun.prototype.Apply_TextPr = function(TextPr, IncFontSize, ApplyToAll)
         //       ране потом не бегать каждый раз по всему массиву в поисках para_End.
 
         var bEnd = false;
-        var Count = this.Content.length;
+        var Count = this.DisplayContent.length;
         for ( var Pos = 0; Pos < Count; Pos++ )
         {
-            if ( para_End === this.Content[Pos].Type )
+            if ( para_End === this.DisplayContent[Pos].Type )
             {
                 bEnd = true;
                 break;
@@ -7650,7 +7644,7 @@ ParaRun.prototype.Apply_TextPr = function(TextPr, IncFontSize, ApplyToAll)
             var StartPos = this.State.Selection.StartPos;
             var EndPos   = this.State.Selection.EndPos;
 
-            if (StartPos === EndPos && 0 !== this.Content.length)
+            if (StartPos === EndPos && 0 !== this.DisplayContent.length)
 			{
 				CRun = this;
 				LRun = null;
@@ -7668,7 +7662,7 @@ ParaRun.prototype.Apply_TextPr = function(TextPr, IncFontSize, ApplyToAll)
 				}
 
 				// Если выделено не до конца, тогда разделяем по последней точке
-				if (EndPos < this.Content.length)
+				if (EndPos < this.DisplayContent.length)
 				{
 					RRun = LRun.Split_Run(EndPos);
 					RRun.SetReviewType(ReviewType);
@@ -7766,7 +7760,7 @@ ParaRun.prototype.Apply_TextPr = function(TextPr, IncFontSize, ApplyToAll)
             var CurPos = this.State.ContentPos;
 
             // Если выделено не до конца, тогда разделяем по последней точке
-            if ( CurPos < this.Content.length )
+            if ( CurPos < this.DisplayContent.length )
             {
                 RRun = LRun.Split_Run(CurPos);
                 RRun.SetReviewType(ReviewType);
@@ -8104,9 +8098,9 @@ ParaRun.prototype.Apply_Pr = function(TextPr)
 	if (undefined !== TextPr.Shd)
 		this.Set_Shd(TextPr.Shd);
 
-	for (var nPos = 0, nCount = this.Content.length; nPos < nCount; ++nPos)
+	for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; ++nPos)
 	{
-		if (para_End === this.Content[nPos].Type)
+		if (para_End === this.DisplayContent[nPos].Type)
 			return this.Paragraph.TextPr.Apply_TextPr(TextPr);
 	}
 };
@@ -8875,9 +8869,9 @@ ParaRun.prototype.RemoveTrackMoveMarks = function(oTrackManager)
 	var sMoveId = oTrackMove.GetMoveId();
 	var isFrom  = oTrackMove.IsFrom();
 
-	for (var nPos = this.Content.length - 1; nPos >= 0; --nPos)
+	for (var nPos = this.DisplayContent.length - 1; nPos >= 0; --nPos)
 	{
-		var oItem = this.Content[nPos];
+		var oItem = this.DisplayContent[nPos];
 		if (para_RevisionMove === oItem.Type)
 		{
 			if (sMoveId === oItem.GetMarkId())
@@ -9313,14 +9307,14 @@ ParaRun.prototype.Math_SetPosition = function(pos, PosInfo)
 
     for(var Pos = StartPos; Pos < EndPos; Pos++)
     {
-        var Item = this.Content[Pos];
+        var Item = this.DisplayContent[Pos];
         if(PosInfo.DispositionOpers !== null && Item.Type == para_Math_BreakOperator)
         {
             PosInfo.DispositionOpers.push(pos.x + Item.GapLeft);
         }
 
-        this.Content[Pos].setPosition(pos);
-        pos.x += this.Content[Pos].Get_WidthVisible(); // Get_Width => Get_WidthVisible
+        this.DisplayContent[Pos].setPosition(pos);
+        pos.x += this.DisplayContent[Pos].Get_WidthVisible(); // Get_Width => Get_WidthVisible
                                                      // Get_WidthVisible - Width + Gaps с учетом настроек состояния
     }
 };
@@ -9477,8 +9471,8 @@ ParaRun.prototype.UpdateOperators = function(_CurLine, _CurRange, bEmptyGapLeft,
         var _bEmptyGapLeft  = bEmptyGapLeft && Pos == StartPos,
             _bEmptyGapRight = bEmptyGapRight && Pos == EndPos - 1;
 
-        this.Content[Pos].Update_StateGapLeft(_bEmptyGapLeft);
-        this.Content[Pos].Update_StateGapRight(_bEmptyGapRight);
+        this.DisplayContent[Pos].Update_StateGapLeft(_bEmptyGapLeft);
+        this.DisplayContent[Pos].Update_StateGapRight(_bEmptyGapRight);
     }
 };
 ParaRun.prototype.Math_Apply_Style = function(Value)
@@ -9584,9 +9578,9 @@ ParaRun.prototype.Math_GetRealFontSize = function(FontSize)
 };
 ParaRun.prototype.Math_CompareFontSize = function(ComparableFontSize, bStartLetter)
 {
-    var lng = this.Content.length;
+    var lng = this.DisplayContent.length;
 
-    var Letter = this.Content[lng - 1];
+    var Letter = this.DisplayContent[lng - 1];
 
     if(bStartLetter == true)
         Letter = this.DisplayContent[0];
@@ -9660,7 +9654,7 @@ ParaRun.prototype.Math_GetPosForcedBreak = function(bStart, bEnd)
 {
     var ResultPos = null;
 
-    if(this.Content.length > 0)
+    if(this.DisplayContent.length > 0)
     {
         var StartPos = this.Selection.StartPos,
             EndPos   = this.Selection.EndPos,
@@ -9677,18 +9671,18 @@ ParaRun.prototype.Math_GetPosForcedBreak = function(bStart, bEnd)
 
         if(bStart)
         {
-            ResultPos = this.Content[0].Type == para_Math_BreakOperator ? 0 : ResultPos;
+            ResultPos = this.DisplayContent[0].Type == para_Math_BreakOperator ? 0 : ResultPos;
         }
         else if(bEnd)
         {
-            var lastPos = this.Content.length - 1;
-            ResultPos = this.Content[lastPos].Type == para_Math_BreakOperator ? lastPos : ResultPos;
+            var lastPos = this.DisplayContent.length - 1;
+            ResultPos = this.DisplayContent[lastPos].Type == para_Math_BreakOperator ? lastPos : ResultPos;
         }
         else if(bCheckTwoItem)
         {
             var Pos = bSelect == false ? this.State.ContentPos : StartPos;
-            var bPrevBreakOperator  = Pos > 0 ? this.Content[Pos - 1].Type == para_Math_BreakOperator : false,
-                bCurrBreakOperator  = Pos < this.Content.length ? this.Content[Pos].Type == para_Math_BreakOperator : false;
+            var bPrevBreakOperator  = Pos > 0 ? this.DisplayContent[Pos - 1].Type == para_Math_BreakOperator : false,
+                bCurrBreakOperator  = Pos < this.DisplayContent.length ? this.DisplayContent[Pos].Type == para_Math_BreakOperator : false;
 
             if(bCurrBreakOperator)
             {
@@ -9702,7 +9696,7 @@ ParaRun.prototype.Math_GetPosForcedBreak = function(bStart, bEnd)
         }
         else if(bCheckOneItem)
         {
-            if(this.Content[StartPos].Type == para_Math_BreakOperator)
+            if(this.DisplayContent[StartPos].Type == para_Math_BreakOperator)
             {
                 ResultPos = StartPos;
             }
@@ -9747,7 +9741,7 @@ ParaRun.prototype.UpdLastElementForGaps = function(_CurLine, _CurRange, GapsInfo
 
     var EndPos   = this.protected_GetRangeEndPos(CurLine, CurRange);
     var FontSize = this.Get_CompiledPr(false).FontSize;
-    var Last     = this.Content[EndPos];
+    var Last     = this.DisplayContent[EndPos];
 
     GapsInfo.updateCurrentObject(Last, FontSize);
 
@@ -9764,9 +9758,9 @@ ParaRun.prototype.AddMathPlaceholder = function()
 };
 ParaRun.prototype.RemoveMathPlaceholder = function()
 {
-	for (var nPos = 0; nPos < this.Content.length; ++nPos)
+	for (var nPos = 0; nPos < this.DisplayContent.length; ++nPos)
 	{
-		if (para_Math_Placeholder === this.Content[nPos].Type)
+		if (para_Math_Placeholder === this.DisplayContent[nPos].Type)
 		{
 			this.Remove_FromContent(nPos, 1, true);
 			nPos--;
@@ -9947,9 +9941,9 @@ ParaRun.prototype.CompareDrawingsLogicPositions = function(CompareObject)
     var Drawing1 = CompareObject.Drawing1;
     var Drawing2 = CompareObject.Drawing2;
 
-    for (var Pos = 0, Count = this.Content.length; Pos < Count; Pos++)
+    for (var Pos = 0, Count = this.DisplayContent.length; Pos < Count; Pos++)
     {
-        var Item = this.Content[Pos];
+        var Item = this.DisplayContent[Pos];
 
         if (Item === Drawing1)
         {
@@ -10162,11 +10156,11 @@ ParaRun.prototype.SelectThisElement = function(nDirection)
 };
 ParaRun.prototype.GetAllParagraphs = function(Props, ParaArray)
 {
-    var ContentLen = this.Content.length;
+    var ContentLen = this.DisplayContent.length;
     for (var CurPos = 0; CurPos < ContentLen; CurPos++)
     {
-        if (para_Drawing == this.Content[CurPos].Type)
-            this.Content[CurPos].GetAllParagraphs(Props, ParaArray);
+        if (para_Drawing == this.DisplayContent[CurPos].Type)
+            this.DisplayContent[CurPos].GetAllParagraphs(Props, ParaArray);
     }
 };
 ParaRun.prototype.CheckRevisionsChanges = function(Checker, ContentPos, Depth)
@@ -10189,10 +10183,10 @@ ParaRun.prototype.CheckRevisionsChanges = function(Checker, ContentPos, Depth)
         if (reviewtype_Add === ReviewType || reviewtype_Remove === ReviewType)
         {
             var Text = "";
-            var ContentLen = this.Content.length;
+            var ContentLen = this.DisplayContent.length;
             for (var CurPos = 0; CurPos < ContentLen; CurPos++)
             {
-                var Item = this.Content[CurPos];
+                var Item = this.DisplayContent[CurPos];
                 var ItemType = Item.Type;
                 switch (ItemType)
                 {
@@ -10589,9 +10583,9 @@ ParaRun.prototype.Set_CompositeInput = function(oCompositeInput)
 };
 ParaRun.prototype.GetFootnotesList = function(oEngine)
 {
-	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+	for (var nIndex = 0, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 	{
-		var oItem = this.Content[nIndex];
+		var oItem = this.DisplayContent[nIndex];
 		if (para_FootnoteReference === oItem.Type)
 		{
 			oEngine.Add(oItem.GetFootnote(), oItem, this);
@@ -10622,9 +10616,9 @@ ParaRun.prototype.IsParaEndRun = function()
 };
 ParaRun.prototype.RemoveElement = function(oElement)
 {
-	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+	for (var nIndex = 0, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 	{
-		if (oElement === this.Content[nIndex])
+		if (oElement === this.DisplayContent[nIndex])
 			return this.RemoveFromContent(nIndex, 1, true);
 	}
 };
@@ -10643,15 +10637,15 @@ ParaRun.prototype.GotoFootnoteRef = function(isNext, isCurrent, isStepOver)
 		if (true === isNext)
 			nPos = 0;
 		else
-			nPos = this.Content.length - 1;
+			nPos = this.DisplayContent.length - 1;
 	}
 
 	var nResult = 0;
 	if (true === isNext)
 	{
-		for (var nIndex = nPos, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+		for (var nIndex = nPos, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 		{
-			if (para_FootnoteReference === this.Content[nIndex].Type && ((true !== isCurrent && true === isStepOver) || (true === isCurrent && (true === this.Selection.Use || nPos !== nIndex))))
+			if (para_FootnoteReference === this.DisplayContent[nIndex].Type && ((true !== isCurrent && true === isStepOver) || (true === isCurrent && (true === this.Selection.Use || nPos !== nIndex))))
 			{
 				if (this.Paragraph && this.Paragraph.bFromDocument && this.Paragraph.LogicDocument)
 					this.Paragraph.LogicDocument.RemoveSelection();
@@ -10667,7 +10661,7 @@ ParaRun.prototype.GotoFootnoteRef = function(isNext, isCurrent, isStepOver)
 	{
 		for (var nIndex = Math.min(nPos, this.Content.length - 1); nIndex >= 0; --nIndex)
 		{
-			if (para_FootnoteReference === this.Content[nIndex].Type && ((true !== isCurrent && true === isStepOver) || (true === isCurrent && (true === this.Selection.Use || nPos !== nIndex))))
+			if (para_FootnoteReference === this.DisplayContent[nIndex].Type && ((true !== isCurrent && true === isStepOver) || (true === isCurrent && (true === this.Selection.Use || nPos !== nIndex))))
 			{
 				if (this.Paragraph && this.Paragraph.bFromDocument && this.Paragraph.LogicDocument)
 					this.Paragraph.LogicDocument.RemoveSelection();
@@ -10692,8 +10686,8 @@ ParaRun.prototype.GetFootnoteRefsInRange = function(arrFootnotes, _CurLine, _Cur
 
 	for (var CurPos = StartPos; CurPos < EndPos; CurPos++)
 	{
-		if (para_FootnoteReference === this.Content[CurPos].Type)
-			arrFootnotes.push(this.Content[CurPos]);
+		if (para_FootnoteReference === this.DisplayContent[CurPos].Type)
+			arrFootnotes.push(this.DisplayContent[CurPos]);
 	}
 };
 ParaRun.prototype.GetAllContentControls = function(arrContentControls)
@@ -10703,7 +10697,7 @@ ParaRun.prototype.GetAllContentControls = function(arrContentControls)
 
 	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
 	{
-		var oItem = this.Content[nIndex];
+		var oItem = this.DisplayContent[nIndex];
 		if (para_Drawing === oItem.Type || para_FootnoteReference === oItem.Type)
 		{
 			oItem.GetAllContentControls(arrContentControls);
@@ -10717,9 +10711,9 @@ ParaRun.prototype.GetAllContentControls = function(arrContentControls)
  */
 ParaRun.prototype.GetElementPosition = function(oElement)
 {
-	for (var nPos = 0, nCount = this.Content.length; nPos < nCount; ++nPos)
+	for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; ++nPos)
 	{
-		if (oElement === this.Content[nPos])
+		if (oElement === this.DisplayContent[nPos])
 			return nPos;
 	}
 
@@ -10771,7 +10765,7 @@ ParaRun.prototype.GetCurrentComplexFields = function(arrComplexFields, isCurrent
 	var nEndPos = isCurrent ? this.State.ContentPos : this.Content.length;
 	for (var nPos = 0; nPos < nEndPos; ++nPos)
 	{
-		var oItem = this.Content[nPos];
+		var oItem = this.DisplayContent[nPos];
 		if (oItem.Type !== para_FieldChar)
 			continue;
 
@@ -10816,9 +10810,9 @@ ParaRun.prototype.GetCurrentComplexFields = function(arrComplexFields, isCurrent
 ParaRun.prototype.RemoveTabsForTOC = function(_isTab)
 {
 	var isTab = _isTab;
-	for (var nPos = 0; nPos < this.Content.length; ++nPos)
+	for (var nPos = 0; nPos < this.DisplayContent.length; ++nPos)
 	{
-		if (para_Tab === this.Content[nPos].Type)
+		if (para_Tab === this.DisplayContent[nPos].Type)
 		{
 			if (!isTab)
 			{
@@ -10846,7 +10840,7 @@ ParaRun.prototype.GetAllFields = function(isUseSelection, arrFields)
 
 	for (var nPos = nStartPos; nPos < nEndPos; ++nPos)
 	{
-		var oItem = this.Content[nPos];
+		var oItem = this.DisplayContent[nPos];
 		if (para_FieldChar === oItem.Type)
 		{
 			var oComplexField = oItem.GetComplexField();
@@ -10884,9 +10878,9 @@ ParaRun.prototype.RemoveFromContent = function(nPos, nCount, isUpdatePositions)
 };
 ParaRun.prototype.GetComplexField = function(nType)
 {
-	for (var nPos = 0, nCount = this.Content.length; nPos < nCount; ++nPos)
+	for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; ++nPos)
 	{
-		var oItem = this.Content[nPos];
+		var oItem = this.DisplayContent[nPos];
 
 		if (para_FieldChar === oItem.Type && oItem.IsBegin())
 		{
@@ -10906,9 +10900,9 @@ ParaRun.prototype.GetComplexField = function(nType)
 };
 ParaRun.prototype.GetComplexFieldsArray = function(nType, arrComplexFields)
 {
-	for (var nPos = 0, nCount = this.Content.length; nPos < nCount; ++nPos)
+	for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; ++nPos)
 	{
-		var oItem = this.Content[nPos];
+		var oItem = this.DisplayContent[nPos];
 
 		if (para_FieldChar === oItem.Type && oItem.IsBegin())
 		{
@@ -10965,7 +10959,7 @@ ParaRun.prototype.ProcessAutoCorrect = function(nPos)
 
 	oContentPos.Update(nPos, oContentPos.GetDepth() + 1);
 
-	if (para_Text === this.Content[nPos].Type && (34 === this.Content[nPos].Value || 39 === this.Content[nPos].Value))
+	if (para_Text === this.DisplayContent[nPos].Type && (34 === this.DisplayContent[nPos].Value || 39 === this.DisplayContent[nPos].Value))
 	{
 		if (oDocument.IsAutoCorrectSmartQuotes())
 		{
@@ -10988,13 +10982,13 @@ ParaRun.prototype.ProcessAutoCorrect = function(nPos)
 			var nCharCode;
 
 			// Обработка русских кавычек "елочка"
-			if (34 === this.Content[nPos].Value && this.Get_CompiledPr(false).Lang && 1049 === this.Get_CompiledPr(false).Lang.Val)
+			if (34 === this.DisplayContent[nPos].Value && this.Get_CompiledPr(false).Lang && 1049 === this.Get_CompiledPr(false).Lang.Val)
 			{
 				nCharCode = isOpenQuote ? 171 : 187;
 			}
 			else
 			{
-				nCharCode = (34 === this.Content[nPos].Value ? (isOpenQuote ? 8220 : 8221) : (isOpenQuote ? 8216 : 8217));
+				nCharCode = (34 === this.DisplayContent[nPos].Value ? (isOpenQuote ? 8220 : 8221) : (isOpenQuote ? 8216 : 8217));
 			}
 
 			// Проверку на лок можно не делать, т.к. мы собираемся менять содержимое данного рана, а такую проверку мы уже делали
@@ -11011,7 +11005,7 @@ ParaRun.prototype.ProcessAutoCorrect = function(nPos)
 		}
 		return false;
 	}
-	else if (para_Text === this.Content[nPos].Type && 45 === this.Content[nPos].Value)
+	else if (para_Text === this.DisplayContent[nPos].Type && 45 === this.DisplayContent[nPos].Value)
 	{
 		if (oDocument.IsAutoCorrectHyphensWithDash())
 		{
@@ -11036,9 +11030,9 @@ ParaRun.prototype.ProcessAutoCorrect = function(nPos)
 				oParagraph.RemoveSelection();
 
 				// TODO:
-				for (var nTempPos = 0, nCount = this.Content.length; nTempPos < nCount; ++nTempPos)
+				for (var nTempPos = 0, nCount = this.DisplayContent.length; nTempPos < nCount; ++nTempPos)
 				{
-					if (this.Content[nTempPos] === oDash)
+					if (this.DisplayContent[nTempPos] === oDash)
 					{
 						this.State.ContentPos = nTempPos + 1;
 						break;
@@ -11325,10 +11319,10 @@ ParaRun.prototype.private_GetSuitableNumberedLvlForAutoCorrect = function(sText)
 };
 ParaRun.prototype.UpdateBookmarks = function(oManager)
 {
-	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+	for (var nIndex = 0, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 	{
-		if (para_Drawing === this.Content[nIndex].Type)
-			this.Content[nIndex].UpdateBookmarks(oManager);
+		if (para_Drawing === this.DisplayContent[nIndex].Type)
+			this.DisplayContent[nIndex].UpdateBookmarks(oManager);
 	}
 };
 ParaRun.prototype.CheckRunContent = function(fCheck)
@@ -11337,9 +11331,9 @@ ParaRun.prototype.CheckRunContent = function(fCheck)
 };
 ParaRun.prototype.ProcessComplexFields = function(oComplexFields)
 {
-	for (var nPos = 0, nCount = this.Content.length; nPos < nCount; ++nPos)
+	for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; ++nPos)
 	{
-		var oItem     = this.private_CheckInstrText(this.Content[nPos]);
+		var oItem     = this.private_CheckInstrText(this.DisplayContent[nPos]);
 		var nItemType = oItem.Type;
 
 		if (oComplexFields.IsHiddenFieldContent() && para_End !== nItemType && para_FieldChar !== nItemType)
@@ -11357,21 +11351,21 @@ ParaRun.prototype.GetSelectedElementsInfo = function(oInfo)
 	{
 		oInfo.RegisterRunWithReviewType(this.GetReviewType());
 
-		for (var nPos = 0, nCount = this.Content.length; nPos < nCount; ++nPos)
+		for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; ++nPos)
 		{
-			if (para_RevisionMove === this.Content[nPos].Type)
+			if (para_RevisionMove === this.DisplayContent[nPos].Type)
 			{
-				oInfo.RegisterTrackMoveMark(this.Content[nPos].Type);
+				oInfo.RegisterTrackMoveMark(this.DisplayContent[nPos].Type);
 			}
 		}
 	}
 };
 ParaRun.prototype.GetLastTrackMoveMark = function()
 {
-	for (var nPos = this.Content.length - 1; nPos >= 0; --nPos)
+	for (var nPos = this.DisplayContent.length - 1; nPos >= 0; --nPos)
 	{
-		if (para_RevisionMove === this.Content[nPos].Type)
-			return this.Content[nPos];
+		if (para_RevisionMove === this.DisplayContent[nPos].Type)
+			return this.DisplayContent[nPos];
 	}
 
 	return null;
@@ -11393,11 +11387,7 @@ function CParaRunStartState(Run)
 {
     this.Paragraph = Run.Paragraph;
     this.Pr = Run.Pr.Copy();
-    this.Content = [];
-    for(var i = 0; i < Run.Content.length; ++i)
-    {
-        this.Content.push(Run.Content[i]);
-    }
+    this.Content = Run.Content.slice()
     this.GenerateDisplayContent && this.GenerateDisplayContent()
 }
 

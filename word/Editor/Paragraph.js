@@ -700,8 +700,12 @@ Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bCorrectPos)
 {
     var OrigPos = this.GetOrigPos(Pos)
 	History.Add(new CChangesParagraphAddItem(this, OrigPos, [Item]));
+    Item.Pos = OrigPos
 	this.Content.splice(OrigPos, 0, Item);
-    this.GenerateDisplayContent()
+    if (this.Content !== this.DisplayContent) {
+        if (Item.isArabic) this.DisplayContent.splice(Pos+1, 0, Item)
+        else this.DisplayContent.splice(Pos, 0, Item)
+    }
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -831,7 +835,7 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos)
 		Item.PreDelete();
 
 	this.Content.splice(OrigPos, 1);
-    this.GenerateDisplayContent()
+    if (this.Content !== this.DisplayContent) this.DisplayContent.splice(Pos, 1)
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -947,7 +951,6 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 
 	var DeletedItems = this.Content.slice(OrigPos, OrigPos + Count);
 	History.Add(new CChangesParagraphRemoveItem(this, OrigPos, DeletedItems));
-    this.GenerateDisplayContent()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks(DeletedItems);
 	this.UpdateDocumentOutline();
@@ -980,7 +983,9 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 			ParaContentPos.Data[0] = Math.max(0, Pos);
 	}
 
-	this.Content.splice(Pos, Count);
+
+    this.Content.splice(OrigPos, Count);
+    this.GenerateDisplayContent()
 
 	// Комментарии удаляем после, чтобы не нарушить позиции
 	var CountCommentsToDelete = CommentsToDelete.length;
@@ -3130,6 +3135,7 @@ Paragraph.prototype.Remove = function(nCount, isRemoveWholeElement, bRemoveOnlyS
 		}
 
 		var ContentPos = this.CurPos.ContentPos;
+        if (this.DisplayContent[ContentPos].isArabic) Direction *= -1
 		while (false === this.DisplayContent[ContentPos].Remove(Direction, bOnAddText))
 		{
 			if (Direction < 0)
@@ -3514,11 +3520,11 @@ Paragraph.prototype.Add = function(Item)
 			if (true === this.ApplyToAll)
 			{
 				// Применяем настройки ко всем элементам параграфа
-				var ContentLen = this.Content.length;
+				var ContentLen = this.DisplayContent.length;
 
 				for (var CurPos = 0; CurPos < ContentLen; CurPos++)
 				{
-					this.Content[CurPos].Apply_TextPr(TextPr, undefined, true);
+					this.DisplayContent[CurPos].Apply_TextPr(TextPr, undefined, true);
 				}
 
 				// Выставляем настройки для символа параграфа
@@ -3884,11 +3890,11 @@ Paragraph.prototype.IncDec_FontSize = function(bIncrease)
 	if (true === this.ApplyToAll)
 	{
 		// Применяем настройки ко всем элементам параграфа
-		var ContentLen = this.Content.length;
+		var ContentLen = this.DisplayContent.length;
 
 		for (var CurPos = 0; CurPos < ContentLen; CurPos++)
 		{
-			this.Content[CurPos].Apply_TextPr(undefined, bIncrease, true);
+			this.DisplayContent[CurPos].Apply_TextPr(undefined, bIncrease, true);
 		}
 	}
 	else
@@ -4045,23 +4051,23 @@ Paragraph.prototype.Can_IncreaseLevel = function(bIncrease)
 			return false;
 		}
 	}
-	for (i = 0; i < this.Content.length; ++i)
+	for (i = 0; i < this.DisplayContent.length; ++i)
 	{
-		if (this.Content[i].Type === para_Run)
+		if (this.DisplayContent[i].Type === para_Run)
 		{
-			RunPr = this.Content[i].Get_CompiledPr();
+			RunPr = this.DisplayContent[i].Get_CompiledPr();
 			if (RunPr.FontSize + DeltaFontSize < 1)
 			{
 				return false;
 			}
 		}
-		else if (this.Content[i].Type === para_Hyperlink)
+		else if (this.DisplayContent[i].Type === para_Hyperlink)
 		{
-			for (j = 0; j < this.Content[i].Content.length; ++j)
+			for (j = 0; j < this.DisplayContent[i].Content.length; ++j)
 			{
-				if (this.Content[i].Content[j].Type === para_Run)
+				if (this.DisplayContent[i].Content[j].Type === para_Run)
 				{
-					RunPr = this.Content[i].Content[j].Get_CompiledPr();
+					RunPr = this.DisplayContent[i].Content[j].Get_CompiledPr();
 					if (RunPr.FontSize + DeltaFontSize < 1)
 					{
 						return false;
@@ -4106,24 +4112,24 @@ Paragraph.prototype.Increase_Level = function(bIncrease)
 		{
 			this.TextPr.Set_FontSize(this.TextPr.FontSize + DeltaFontSize);
 		}
-		for (i = 0; i < this.Content.length; ++i)
+		for (i = 0; i < this.DisplayContent.length; ++i)
 		{
-			if (this.Content[i].Type === para_Run)
+			if (this.DisplayContent[i].Type === para_Run)
 			{
-				if (AscFormat.isRealNumber(this.Content[i].Pr.FontSize))
+				if (AscFormat.isRealNumber(this.DisplayContent[i].Pr.FontSize))
 				{
-					this.Content[i].Set_FontSize(this.Content[i].Pr.FontSize + DeltaFontSize);
+					this.DisplayContent[i].Set_FontSize(this.DisplayContent[i].Pr.FontSize + DeltaFontSize);
 				}
 			}
-			else if (this.Content[i].Type === para_Hyperlink)
+			else if (this.DisplayContent[i].Type === para_Hyperlink)
 			{
-				for (j = 0; j < this.Content[i].Content.length; ++j)
+				for (j = 0; j < this.DisplayContent[i].Content.length; ++j)
 				{
-					if (this.Content[i].Content[j].Type === para_Run)
+					if (this.DisplayContent[i].Content[j].Type === para_Run)
 					{
-						if (AscFormat.isRealNumber(this.Content[i].Content[j].Pr.FontSize))
+						if (AscFormat.isRealNumber(this.DisplayContent[i].Content[j].Pr.FontSize))
 						{
-							this.Content[i].Content[j].Set_FontSize(this.Content[i].Content[j].Pr.FontSize + DeltaFontSize);
+							this.DisplayContent[i].Content[j].Set_FontSize(this.DisplayContent[i].Content[j].Pr.FontSize + DeltaFontSize);
 						}
 					}
 				}
@@ -7190,9 +7196,9 @@ Paragraph.prototype.SelectAll = function(Direction)
 };
 Paragraph.prototype.Select_Math = function(ParaMath)
 {
-	for (var nPos = 0, nCount = this.Content.length; nPos < nCount; nPos++)
+	for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; nPos++)
 	{
-		if (this.Content[nPos] === ParaMath)
+		if (this.DisplayContent[nPos] === ParaMath)
 		{
 			this.Selection.Use           = true;
 			this.Selection.StartManually = false;
@@ -7677,17 +7683,17 @@ Paragraph.prototype.GetCalculatedTextPr = function()
 		this.SelectAll(1);
 
 		var StartPos = 0;
-		var Count    = this.Content.length;
-		while (true !== this.Content[StartPos].Is_CursorPlaceable() && StartPos < Count - 1)
+		var Count    = this.DisplayContent.length;
+		while (true !== this.DisplayContent[StartPos].Is_CursorPlaceable() && StartPos < Count - 1)
 			StartPos++;
 
-		TextPr    = this.Content[StartPos].Get_CompiledTextPr(true);
-		var Count = this.Content.length;
+		TextPr    = this.DisplayContent[StartPos].Get_CompiledTextPr(true);
+		var Count = this.DisplayContent.length;
 
 		for (var CurPos = StartPos + 1; CurPos < Count; CurPos++)
 		{
-			var TempTextPr = this.Content[CurPos].Get_CompiledTextPr(false);
-			if (null !== TempTextPr && undefined !== TempTextPr && true !== this.Content[CurPos].IsSelectionEmpty())
+			var TempTextPr = this.DisplayContent[CurPos].Get_CompiledTextPr(false);
+			if (null !== TempTextPr && undefined !== TempTextPr && true !== this.DisplayContent[CurPos].IsSelectionEmpty())
 				TextPr = TextPr.Compare(TempTextPr);
 		}
 
@@ -15618,7 +15624,7 @@ function CRunRecalculateObject(StartLine, StartRange)
     this.StartRange  = StartRange;
     this.Lines       = [];
     this.Content     = [];
-    this.DisplayContent = this.Content
+    this.DisplayContent = []
 
     this.MathInfo    = null;
 }
@@ -15964,11 +15970,7 @@ function CParagraphStartState(Paragraph)
 {
     this.Pr = Paragraph.Pr.Copy();
     this.TextPr = Paragraph.TextPr;
-    this.Content = [];
-    for(var i = 0; i < Paragraph.Content.length; ++i)
-    {
-        this.Content.push(Paragraph.Content[i]);
-    }
+    this.Content = Paragraph.Content.slice()
     this.DisplayContent = this.Content
 }
 
