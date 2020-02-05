@@ -1327,11 +1327,13 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 	if (-1 === Pos)
 		Pos = this.Content.length;
 
+    // in Arabic we need to affect the prior position as it is RTL
+    if (this.isArabic && this.isRendered && Pos > 0) --Pos
+
 	if (Item.SetParent)
 		Item.SetParent(this);
 
     var OrigCurPos = this.GetOrigPos(Pos)
-
     History.Add(new CChangesRunAddItem(this, OrigCurPos, [Item], true));
     this.Content.splice( OrigCurPos, 0, Item );
     this.GenerateDisplayContent()
@@ -1400,11 +1402,6 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
 
     var OrigCurPos = this.GetOrigPos(Pos)
-    if (this.isRendered) {
-        console.log('Remove_FromContent',Pos,OrigCurPos)
-        console.trace()
-    }
-
     // Получим массив удаляемых элементов
     var DeletedItems = this.Content.slice( OrigCurPos, OrigCurPos + Count );
 	History.Add(new CChangesRunRemoveItem(this, OrigCurPos, DeletedItems));
