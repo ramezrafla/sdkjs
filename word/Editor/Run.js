@@ -876,6 +876,13 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
 					EndPos   = Selection.StartPos;
 				}
 
+                if (this.isArabic) {
+                    var len = this.DisplayContent.length - 1
+                    StartPos = Math.min(len, StartPos + 1)
+                    EndPos = Math.min(len, EndPos + 1)
+                }
+
+
 				var Parent = this.Get_Parent();
 				var RunPos = this.private_GetPosInParent(Parent);
 
@@ -1029,12 +1036,17 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         {
             var StartPos = Selection.StartPos;
             var EndPos = Selection.EndPos;
-
             if (StartPos > EndPos)
             {
                 var Temp = StartPos;
                 StartPos = EndPos;
                 EndPos = Temp;
+            }
+
+            if (this.isArabic) {
+                var len = this.DisplayContent.length - 1
+                StartPos = Math.min(len, StartPos + 1)
+                EndPos = Math.max(len, EndPos + 1)
             }
 
             // Если в выделение попадает ParaEnd, тогда удаляем все кроме этого элемента
@@ -1134,6 +1146,7 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         }
     }
 
+    if (this.isArabic && this.State.ContentPos > 0) --this.State.ContentPos
     return true;
 };
 
