@@ -805,7 +805,6 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
 	this.Content = this.Content.concat(Items);
 
 	History.Add(new CChangesParagraphAddItem(this, StartPos, Items));
-    this.GenerateDisplayContent()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks(Items);
 	this.UpdateDocumentOutline();
@@ -985,7 +984,6 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 
 
     this.Content.splice(OrigPos, Count);
-    this.GenerateDisplayContent()
 
 	// Комментарии удаляем после, чтобы не нарушить позиции
 	var CountCommentsToDelete = CommentsToDelete.length;
@@ -11535,7 +11533,6 @@ Paragraph.prototype.Read_FromBinary2 = function(Reader)
 				Element.SetParagraph(this);
 		}
 	}
-    this.GenerateDisplayContent()
 
 	AscCommon.CollaborativeEditing.Add_NewObject(this);
 
