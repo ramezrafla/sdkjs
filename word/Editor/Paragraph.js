@@ -7897,10 +7897,10 @@ Paragraph.prototype.IsSelectionEmpty = function(bCheckHidden)
 };
 Paragraph.prototype.Get_StartTabsCount = function(TabsCounter)
 {
-	var ContentLen = this.Content.length;
+	var ContentLen = this.DisplayContent.length;
 	for (var Pos = 0; Pos < ContentLen; Pos++)
 	{
-		var Element = this.Content[Pos];
+		var Element = this.DisplayContent[Pos];
 		if (false === Element.Get_StartTabsCount(TabsCounter))
 			return false;
 	}
@@ -7909,10 +7909,10 @@ Paragraph.prototype.Get_StartTabsCount = function(TabsCounter)
 };
 Paragraph.prototype.Remove_StartTabs = function(TabsCounter)
 {
-	var ContentLen = this.Content.length;
+	var ContentLen = this.DisplayContent.length;
 	for (var Pos = 0; Pos < ContentLen; Pos++)
 	{
-		var Element = this.Content[Pos];
+		var Element = this.DisplayContent[Pos];
 		if (false === Element.Remove_StartTabs(TabsCounter))
 			return false;
 	}
@@ -8921,12 +8921,12 @@ Paragraph.prototype.GetDirectTextPr = function()
 	{
 		this.SelectAll(1);
 
-		var Count    = this.Content.length;
+		var Count    = this.DisplayContent.length;
 		var StartPos = 0;
-		while (true === this.Content[StartPos].IsSelectionEmpty() && StartPos < Count)
+		while (true === this.DisplayContent[StartPos].IsSelectionEmpty() && StartPos < Count)
 			StartPos++;
 
-		TextPr = this.Content[StartPos].GetDirectTextPr();
+		TextPr = this.DisplayContent[StartPos].GetDirectTextPr();
 
 		this.RemoveSelection();
 	}
@@ -9731,10 +9731,10 @@ Paragraph.prototype.IsStartFromNewPage = function()
 Paragraph.prototype.Get_DrawingObjectRun = function(Id)
 {
 	var Run        = null;
-	var ContentLen = this.Content.length;
+	var ContentLen = this.DisplayContent.length;
 	for (var Index = 0; Index < ContentLen; Index++)
 	{
-		var Element = this.Content[Index];
+		var Element = this.DisplayContent[Index];
 
 		Run = Element.Get_DrawingObjectRun(Id);
 
@@ -10052,11 +10052,11 @@ Paragraph.prototype.Get_CurrentPage_Relative = function()
 Paragraph.prototype.CollectDocumentStatistics = function(Stats)
 {
 	var ParaStats = new CParagraphStatistics(Stats);
-	var Count     = this.Content.length;
+	var Count     = this.DisplayContent.length;
 
 	for (var Index = 0; Index < Count; Index++)
 	{
-		var Item = this.Content[Index];
+		var Item = this.DisplayContent[Index];
 		Item.CollectDocumentStatistics(ParaStats);
 	}
 
@@ -10202,10 +10202,10 @@ Paragraph.prototype.Document_CreateFontMap = function(FontMap)
 		CurTextPr.Merge(this.TextPr.Value);
 		CurTextPr.Document_CreateFontMap(this.FontMap.Map, FontScheme);
 
-		var Count = this.Content.length;
+		var Count = this.DisplayContent.length;
 		for (var Index = 0; Index < Count; Index++)
 		{
-			this.Content[Index].Create_FontMap(this.FontMap.Map);
+			this.DisplayContent[Index].Create_FontMap(this.FontMap.Map);
 		}
 
 		this.FontMap.NeedRecalc = false;
@@ -10853,10 +10853,10 @@ Paragraph.prototype.Supplement_FramePr = function(FramePr)
 };
 Paragraph.prototype.Can_AddDropCap = function()
 {
-	var Count = this.Content.length;
+	var Count = this.DisplayContent.length;
 	for (var Pos = 0; Pos < Count; Pos++)
 	{
-		var TempRes = this.Content[Pos].Can_AddDropCap();
+		var TempRes = this.DisplayContent[Pos].Can_AddDropCap();
 
 		if (null !== TempRes)
 			return TempRes;
@@ -11800,7 +11800,7 @@ Paragraph.prototype.CanAddComment = function()
 
 		for (var nPos = nStartPos; nPos <= nEndPos; ++nPos)
 		{
-			if (this.Content[nPos].CanAddComment && !this.Content[nPos].CanAddComment())
+			if (this.DisplayContent[nPos].CanAddComment && !this.DisplayContent[nPos].CanAddComment())
 				return false;
 		}
 
@@ -11824,7 +11824,7 @@ Paragraph.prototype.RemoveCommentMarks = function(Id)
 		var Item = this.Content[Pos];
 		if (para_Comment === Item.Type && Id === Item.CommentId)
 		{
-			this.Internal_Content_Remove(Pos);
+			this.Internal_Content_Remove(Item.DisplayPos);
 			Pos--;
 			Count--;
 		}
@@ -11873,7 +11873,7 @@ Paragraph.prototype.ReplaceMisspelledWord = function(Word, oElement)
 	var SPos             = StartPos.Get(0);
 	for (var Pos = SPos; Pos <= EPos; Pos++)
 	{
-		var Item = this.Content[Pos];
+		var Item = this.DisplayContent[Pos];
 		if (para_Comment === Item.Type)
 			CommentsToDelete[Item.CommentId] = true;
 	}
@@ -11932,9 +11932,9 @@ Paragraph.prototype.Set_SectionPr = function(SectPr, bUpdate)
 			this.LogicDocument.UpdateSectionInfo(oOldSectPr, SectPr, true);
 
 		// TODO: Когда избавимся от ParaEnd переделать тут
-		if (this.Content.length > 0 && para_Run === this.Content[this.Content.length - 1].Type)
+		if (this.DisplayContent.length > 0 && para_Run === this.DisplayContent[this.DisplayContent.length - 1].Type)
 		{
-			var LastRun                = this.Content[this.Content.length - 1];
+			var LastRun                = this.DisplayContent[this.DisplayContent.length - 1];
 			LastRun.RecalcInfo.Measure = true;
 		}
 	}
@@ -11964,7 +11964,7 @@ Paragraph.prototype.GetLastRangeVisibleBounds = function()
 
 		for (var Pos = StartPos; Pos <= EndPos; Pos++)
 		{
-			var Item = this.Content[Pos];
+			var Item = this.DisplayContent[Pos];
 			Item.Get_Range_VisibleWidth(RangeW, CurLine, CurRange);
 		}
 
@@ -11992,11 +11992,11 @@ Paragraph.prototype.FindNextFillingForm = function(isNext, isCurrent, isStart)
 		if (isStart)
 		{
 			nStartPos = nCurPos;
-			nEndPos   = isNext ? this.Content.length - 1 : 0;
+			nEndPos   = isNext ? this.DisplayContent.length - 1 : 0;
 		}
 		else
 		{
-			nStartPos = isNext ? 0 : this.Content.length - 1;
+			nStartPos = isNext ? 0 : this.DisplayContent.length - 1;
 			nEndPos   = nCurPos;
 		}
 	}
@@ -12005,11 +12005,11 @@ Paragraph.prototype.FindNextFillingForm = function(isNext, isCurrent, isStart)
 		if (isNext)
 		{
 			nStartPos = 0;
-			nEndPos   = this.Content.length - 1;
+			nEndPos   = this.DisplayContent.length - 1;
 		}
 		else
 		{
-			nStartPos = this.Content.length - 1;
+			nStartPos = this.DisplayContent.length - 1;
 			nEndPos   = 0;
 		}
 	}
@@ -12018,9 +12018,9 @@ Paragraph.prototype.FindNextFillingForm = function(isNext, isCurrent, isStart)
 	{
 		for (var nIndex = nStartPos; nIndex <= nEndPos; ++nIndex)
 		{
-			if (this.Content[nIndex].FindNextFillingForm)
+			if (this.DisplayContent[nIndex].FindNextFillingForm)
 			{
-				var oRes = this.Content[nIndex].FindNextFillingForm(true, isCurrent && nIndex === nCurPos ? true : false, isStart);
+				var oRes = this.DisplayContent[nIndex].FindNextFillingForm(true, isCurrent && nIndex === nCurPos ? true : false, isStart);
 				if (oRes)
 					return oRes;
 			}
@@ -12030,9 +12030,9 @@ Paragraph.prototype.FindNextFillingForm = function(isNext, isCurrent, isStart)
 	{
 		for (var nIndex = nStartPos; nIndex >= nEndPos; --nIndex)
 		{
-			if (this.Content[nIndex].FindNextFillingForm)
+			if (this.DisplayContent[nIndex].FindNextFillingForm)
 			{
-				var oRes = this.Content[nIndex].FindNextFillingForm(false, isCurrent && nIndex === nCurPos ? true : false, isStart);
+				var oRes = this.DisplayContent[nIndex].FindNextFillingForm(false, isCurrent && nIndex === nCurPos ? true : false, isStart);
 				if (oRes)
 					return oRes;
 			}
@@ -12108,7 +12108,7 @@ Paragraph.prototype.Get_ElementByPos = function(ContentPos)
         return this;
 
     var CurPos = ContentPos.Get(0);
-    return this.Content[CurPos].Get_ElementByPos(ContentPos, 1);
+    return this.DisplayContent[CurPos].Get_ElementByPos(ContentPos, 1);
 };
 Paragraph.prototype.private_RecalculateTextMetrics = function(TextMetrics)
 {
@@ -12173,12 +12173,12 @@ Paragraph.prototype.Get_PosByDrawing = function(Id)
 {
     var ContentPos = new CParagraphContentPos();
 
-    var ContentLen = this.Content.length;
+    var ContentLen = this.DisplayContent.length;
 
     var bFind = false;
     for (var CurPos = 0; CurPos < ContentLen; CurPos++)
     {
-        var Element = this.Content[CurPos];
+        var Element = this.DisplayContent[CurPos];
         ContentPos.Update(CurPos, 0);
 
         if (true === Element.Get_PosByDrawing(Id, ContentPos, 1))
@@ -12205,7 +12205,7 @@ Paragraph.prototype.GetStyleFromFormatting = function()
 
         for (CurPos = StartPos; CurPos < EndPos; ++CurPos)
         {
-            if (true !== this.Content[CurPos].IsSelectionEmpty())
+            if (true !== this.DisplayContent[CurPos].IsSelectionEmpty())
                 break;
         }
     }
@@ -12213,7 +12213,7 @@ Paragraph.prototype.GetStyleFromFormatting = function()
     {
         CurPos = this.CurPos.ContentPos;
     }
-    TextPr = this.Content[CurPos].Get_FirstTextPr();
+    TextPr = this.DisplayContent[CurPos].Get_FirstTextPr();
 
     // В стиль не добавляется HighLight
     if (undefined !== TextPr.HighLight)
@@ -12453,13 +12453,13 @@ Paragraph.prototype.CheckRevisionsChanges = function(RevisionsManager)
 
     var Checker    = new CParagraphRevisionsChangesChecker(this, RevisionsManager);
     var ContentPos = new CParagraphContentPos();
-    for (var CurPos = 0, Count = this.Content.length; CurPos < Count; CurPos++)
+    for (var CurPos = 0, Count = this.DisplayContent.length; CurPos < Count; CurPos++)
     {
         if (CurPos === Count - 1)
             Checker.Set_ParaEndRun();
 
         ContentPos.Update(CurPos, 0);
-        this.Content[CurPos].CheckRevisionsChanges(Checker, ContentPos, 1);
+        this.DisplayContent[CurPos].CheckRevisionsChanges(Checker, ContentPos, 1);
     }
 
     Checker.FlushAddRemoveChange();
@@ -12500,9 +12500,9 @@ Paragraph.prototype.CheckRevisionsChanges = function(RevisionsManager)
 
 
     var oEndRun = this.GetParaEndRun();
-    for (var nPos = 0, nCount = oEndRun.Content.length; nPos < nCount; ++nPos)
+    for (var nPos = 0, nCount = oEndRun.DisplayContent.length; nPos < nCount; ++nPos)
 	{
-		var oItem = oEndRun.Content[nPos];
+		var oItem = oEndRun.DisplayContent[nPos];
 		if (para_RevisionMove === oItem.GetType())
 		{
 			Checker.AddReviewMoveMark(oItem, this.Get_EndPos(true));
@@ -12580,15 +12580,15 @@ Paragraph.prototype.AcceptRevisionChanges = function(Type, bAll)
         if (true === bAll)
         {
             StartPos = 0;
-            EndPos   = this.Content.length - 1;
+            EndPos   = this.DisplayContent.length - 1;
         }
 
         // TODO: Как переделаем ParaEnd переделать здесь
-        if (EndPos >= this.Content.length - 1)
+        if (EndPos >= this.DisplayContent.length - 1)
         {
-            EndPos = this.Content.length - 2;
+            EndPos = this.DisplayContent.length - 2;
             if (true === bAll || undefined === Type || c_oAscRevisionsChangeType.TextPr === Type)
-                this.Content[this.Content.length - 1].AcceptPrChange();
+                this.DisplayContent[this.DisplayContent.length - 1].AcceptPrChange();
         }
 
         if (this.IsSelectionToEnd())
@@ -12608,7 +12608,7 @@ Paragraph.prototype.AcceptRevisionChanges = function(Type, bAll)
 		// Начинаем с конца, потому что при выполнении данной функции, количество элементов может изменяться
         for (var nCurPos = EndPos; nCurPos >= StartPos; --nCurPos)
 		{
-			var oItem = this.Content[nCurPos];
+			var oItem = this.DisplayContent[nCurPos];
 			if (c_oAscRevisionsChangeType.MoveMark === Type
 				&& para_RevisionMove === oItem.Type
 				&& oProcessMove)
@@ -12655,15 +12655,15 @@ Paragraph.prototype.RejectRevisionChanges = function(Type, bAll)
 		if (true === bAll)
 		{
 			StartPos = 0;
-			EndPos   = this.Content.length - 1;
+			EndPos   = this.DisplayContent.length - 1;
 		}
 
 		// TODO: Как переделаем ParaEnd переделать здесь
-		if (EndPos >= this.Content.length - 1)
+		if (EndPos >= this.DisplayContent.length - 1)
 		{
-			EndPos = this.Content.length - 2;
+			EndPos = this.DisplayContent.length - 2;
 			if (true === bAll || undefined === Type || c_oAscRevisionsChangeType.TextPr === Type)
-				this.Content[this.Content.length - 1].RejectPrChange();
+				this.DisplayContent[this.DisplayContent.length - 1].RejectPrChange();
 		}
 
 		if (oTrackManager && oTrackManager.GetProcessTrackMove() && c_oAscRevisionsChangeType.MoveMark === Type && this.IsSelectionToEnd())
@@ -12675,7 +12675,7 @@ Paragraph.prototype.RejectRevisionChanges = function(Type, bAll)
 		// Начинаем с конца, потому что при выполнении данной фунцкции, количество элементов может изменяться
 		for (var nCurPos = EndPos; nCurPos >= StartPos; --nCurPos)
 		{
-			var oItem = this.Content[nCurPos];
+			var oItem = this.DisplayContent[nCurPos];
 			if (c_oAscRevisionsChangeType.MoveMark === Type
 				&& para_RevisionMove === oItem.Type
 				&& oProcessMove)
@@ -12837,11 +12837,11 @@ Paragraph.prototype.SetContentSelection = function(StartDocPos, EndDocPos, Depth
 
     if (StartPos !== EndPos)
     {
-        if (this.Content[StartPos] && this.Content[StartPos].SetContentSelection)
-        this.Content[StartPos].SetContentSelection(_StartDocPos, null, Depth + 1, _StartFlag, StartPos > EndPos ? 1 : -1);
+        if (this.DisplayContent[StartPos] && this.DisplayContent[StartPos].SetContentSelection)
+        this.DisplayContent[StartPos].SetContentSelection(_StartDocPos, null, Depth + 1, _StartFlag, StartPos > EndPos ? 1 : -1);
 
-        if (this.Content[EndPos] && this.Content[EndPos].SetContentSelection)
-        this.Content[EndPos].SetContentSelection(null, _EndDocPos, Depth + 1, StartPos > EndPos ? -1 : 1, _EndFlag);
+        if (this.DisplayContent[EndPos] && this.DisplayContent[EndPos].SetContentSelection)
+        this.DisplayContent[EndPos].SetContentSelection(null, _EndDocPos, Depth + 1, StartPos > EndPos ? -1 : 1, _EndFlag);
 
         var _StartPos = StartPos;
         var _EndPos = EndPos;
@@ -12856,13 +12856,13 @@ Paragraph.prototype.SetContentSelection = function(StartDocPos, EndDocPos, Depth
 
         for (var CurPos = _StartPos + 1; CurPos < _EndPos; CurPos++)
         {
-            this.Content[CurPos].SelectAll(Direction);
+            this.DisplayContent[CurPos].SelectAll(Direction);
         }
     }
     else
     {
-        if (this.Content[StartPos] && this.Content[StartPos].SetContentSelection)
-        this.Content[StartPos].SetContentSelection(_StartDocPos, _EndDocPos, Depth + 1, _StartFlag, _EndFlag);
+        if (this.DisplayContent[StartPos] && this.DisplayContent[StartPos].SetContentSelection)
+        this.DisplayContent[StartPos].SetContentSelection(_StartDocPos, _EndDocPos, Depth + 1, _StartFlag, _EndFlag);
     }
 };
 Paragraph.prototype.SetContentPosition = function(DocPos, Depth, Flag)
@@ -12900,16 +12900,16 @@ Paragraph.prototype.SetContentPosition = function(DocPos, Depth, Flag)
     }
 
     // TODO: Как только разберемся с ParaEnd, исправить здесь.
-    if (Pos === this.Content.length - 1 && this.Content.length > 1)
+    if (Pos === this.DisplayContent.length - 1 && this.DisplayContent.length > 1)
 	{
-		Pos     = this.Content.length - 2;
+		Pos     = this.DisplayContent.length - 2;
 		_Flag   = -1;
 		_DocPos = null;
 	}
 
     this.CurPos.ContentPos = Pos;
-    if (this.Content[Pos] && this.Content[Pos].SetContentPosition)
-    	this.Content[Pos].SetContentPosition(_DocPos, Depth + 1, _Flag);
+    if (this.DisplayContent[Pos] && this.DisplayContent[Pos].SetContentPosition)
+    	this.DisplayContent[Pos].SetContentPosition(_DocPos, Depth + 1, _Flag);
     else
         this.Correct_ContentPos2();
 };
@@ -13038,10 +13038,10 @@ Paragraph.prototype.private_CompareBorderSettings = function(Pr1, Pr2)
 Paragraph.prototype.GetFootnotesList = function(oEngine)
 {
 	oEngine.SetCurrentParagraph(this);
-	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+	for (var nIndex = 0, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 	{
-		if (this.Content[nIndex].GetFootnotesList)
-			this.Content[nIndex].GetFootnotesList(oEngine);
+		if (this.DisplayContent[nIndex].GetFootnotesList)
+			this.DisplayContent[nIndex].GetFootnotesList(oEngine);
 
 		if (oEngine.IsRangeFull())
 			return;
@@ -13051,7 +13051,7 @@ Paragraph.prototype.GetAutoWidthForDropCap = function()
 {
 	if (this.Is_Empty())
 	{
-		var oEndRun = this.Content[this.Content.length - 1];
+		var oEndRun = this.DisplayContent[this.Content.length - 1];
 		if (!oEndRun || oEndRun.Type !== para_Run)
 			return 0;
 
@@ -13086,15 +13086,15 @@ Paragraph.prototype.GotoFootnoteRef = function(isNext, isCurrent)
 		if (true === isNext)
 			nPos = 0;
 		else
-			nPos = this.Content.length - 1;
+			nPos = this.DisplayContent.length - 1;
 	}
 
 	var isStepOver = false;
 	if (true === isNext)
 	{
-		for (var nIndex = nPos, nCount = this.Content.length - 1; nIndex < nCount; ++nIndex)
+		for (var nIndex = nPos, nCount = this.DisplayContent.length - 1; nIndex < nCount; ++nIndex)
 		{
-			var nRes = this.Content[nIndex].GotoFootnoteRef ? this.Content[nIndex].GotoFootnoteRef(true, true === isCurrent && nPos === nIndex, isStepOver) : 0;
+			var nRes = this.DisplayContent[nIndex].GotoFootnoteRef ? this.DisplayContent[nIndex].GotoFootnoteRef(true, true === isCurrent && nPos === nIndex, isStepOver) : 0;
 
 			if (nRes > 0)
 				isStepOver = true;
@@ -13106,7 +13106,7 @@ Paragraph.prototype.GotoFootnoteRef = function(isNext, isCurrent)
 	{
 		for (var nIndex = nPos; nIndex >= 0; --nIndex)
 		{
-			var nRes = this.Content[nIndex].GotoFootnoteRef ? this.Content[nIndex].GotoFootnoteRef(false, true === isCurrent && nPos === nIndex, isStepOver) : 0;
+			var nRes = this.DisplayContent[nIndex].GotoFootnoteRef ? this.DisplayContent[nIndex].GotoFootnoteRef(false, true === isCurrent && nPos === nIndex, isStepOver) : 0;
 
 			if (nRes > 0)
 				isStepOver = true;
@@ -13179,8 +13179,8 @@ Paragraph.prototype.private_GetFootnoteRefsInLine = function(CurLine)
 		var oRange = oLine.Ranges[CurRange];
 		for (var CurPos = oRange.StartPos; CurPos <= oRange.EndPos; ++CurPos)
 		{
-			if (this.Content[CurPos].GetFootnoteRefsInRange)
-				this.Content[CurPos].GetFootnoteRefsInRange(arrFootnotes, CurLine, CurRange);
+			if (this.DisplayContent[CurPos].GetFootnoteRefsInRange)
+				this.DisplayContent[CurPos].GetFootnoteRefsInRange(arrFootnotes, CurLine, CurRange);
 		}
 	}
 	return arrFootnotes;
@@ -13399,10 +13399,10 @@ Paragraph.prototype.GetAllContentControls = function(arrContentControls)
 	if (!arrContentControls)
 		arrContentControls = [];
 
-	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+	for (var nIndex = 0, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 	{
-		if (this.Content[nIndex].GetAllContentControls)
-			this.Content[nIndex].GetAllContentControls(arrContentControls);
+		if (this.DisplayContent[nIndex].GetAllContentControls)
+			this.DisplayContent[nIndex].GetAllContentControls(arrContentControls);
 	}
 
 	return arrContentControls;
@@ -13427,14 +13427,14 @@ Paragraph.prototype.GetSelectedContentControls = function()
 
 		for (var Index = StartPos; Index <= EndPos; ++Index)
 		{
-			if (this.Content[Index].GetSelectedContentControls)
-				this.Content[Index].GetSelectedContentControls(arrContentControls);
+			if (this.DisplayContent[Index].GetSelectedContentControls)
+				this.DisplayContent[Index].GetSelectedContentControls(arrContentControls);
 		}
 	}
 	else
 	{
-		if (this.Content[this.CurPos.ContentPos] && this.Content[this.CurPos.ContentPos].GetSelectedContentControls)
-			this.Content[this.CurPos.ContentPos].GetSelectedContentControls(arrContentControls);
+		if (this.DisplayContent[this.CurPos.ContentPos] && this.DisplayContent[this.CurPos.ContentPos].GetSelectedContentControls)
+			this.DisplayContent[this.CurPos.ContentPos].GetSelectedContentControls(arrContentControls);
 	}
 
 	return arrContentControls;
@@ -13446,10 +13446,10 @@ Paragraph.prototype.AddContentControl = function(nContentControlType)
 
 	if (true === this.IsSelectionUse())
 	{
-		if (this.Selection.StartPos === this.Selection.EndPos && para_Run !== this.Content[this.Selection.StartPos].Type)
+		if (this.Selection.StartPos === this.Selection.EndPos && para_Run !== this.DisplayContent[this.Selection.StartPos].Type)
 		{
-			if (this.Content[this.Selection.StartPos].AddContentControl)
-				return this.Content[this.Selection.StartPos].AddContentControl();
+			if (this.DisplayContent[this.Selection.StartPos].AddContentControl)
+				return this.DisplayContent[this.Selection.StartPos].AddContentControl();
 
 			return null;
 		}
@@ -13465,7 +13465,7 @@ Paragraph.prototype.AddContentControl = function(nContentControlType)
 
 			for (var nIndex = nStartPos; nIndex <= nEndPos; ++nIndex)
 			{
-				if (para_Run !== this.Content[nIndex].Type)
+				if (para_Run !== this.DisplayContent[nIndex].Type)
 				{
 					// TODO: Вывести сообщение, что в данном месте нельзя добавить Plain text content control
 					return null;
@@ -13473,10 +13473,10 @@ Paragraph.prototype.AddContentControl = function(nContentControlType)
 			}
 
 			// TODO: ParaEnd
-			if (nEndPos === this.Content.length - 1)
+			if (nEndPos === this.DisplayContent.length - 1)
 			{
 				nEndPos--;
-				this.Content[this.Content.length - 1].RemoveSelection();
+				this.DisplayContent[this.DisplayContent.length - 1].RemoveSelection();
 			}
 
 			var oContentControl = new CInlineLevelSdt();
@@ -13490,16 +13490,16 @@ Paragraph.prototype.AddContentControl = function(nContentControlType)
 			}
 			else
 			{
-				var oNewRun = this.Content[nEndPos].Split_Run(Math.max(this.Content[nEndPos].Selection.StartPos, this.Content[nEndPos].Selection.EndPos));
+				var oNewRun = this.DisplayContent[nEndPos].Split_Run(Math.max(this.DisplayContent[nEndPos].Selection.StartPos, this.DisplayContent[nEndPos].Selection.EndPos));
 				this.Add_ToContent(nEndPos + 1, oNewRun);
 
-				oNewRun = this.Content[nStartPos].Split_Run(Math.min(this.Content[nStartPos].Selection.StartPos, this.Content[nStartPos].Selection.EndPos));
+				oNewRun = this.DisplayContent[nStartPos].Split_Run(Math.min(this.DisplayContent[nStartPos].Selection.StartPos, this.DisplayContent[nStartPos].Selection.EndPos));
 				this.Add_ToContent(nStartPos + 1, oNewRun);
 
 				oContentControl.ReplacePlaceHolderWithContent();
 				for (var nIndex = nEndPos + 1; nIndex >= nStartPos + 1; --nIndex)
 				{
-					oContentControl.Add_ToContent(0, this.Content[nIndex]);
+					oContentControl.Add_ToContent(0, this.DisplayContent[nIndex]);
 					this.Remove_FromContent(nIndex, 1);
 				}
 
@@ -16248,7 +16248,9 @@ Paragraph.prototype.GenerateDisplayContent = function(StartPos, EndPos) {
     var index = 0
     mainStack.forEach(function(currentStack) {
         currentStack.forEach(function(Item) {
-            this.DisplayContent[StartPos+index] = Item
+            var DisplayPos = StartPos + index
+            this.DisplayContent[DisplayPos] = Item
+            Item.DisplayPos = DisplayPos
             ++index
         }.bind(this))
     }.bind(this))
