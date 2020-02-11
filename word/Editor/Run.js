@@ -876,13 +876,6 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
 					EndPos   = Selection.StartPos;
 				}
 
-                if (this.isArabic) {
-                    var len = this.DisplayContent.length - 1
-                    StartPos = Math.min(len, StartPos + 1)
-                    EndPos = Math.min(len, EndPos + 1)
-                }
-
-
 				var Parent = this.Get_Parent();
 				var RunPos = this.private_GetPosInParent(Parent);
 
@@ -1043,12 +1036,6 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
                 EndPos = Temp;
             }
 
-            if (this.isArabic) {
-                var len = this.DisplayContent.length - 1
-                StartPos = Math.min(len, StartPos + 1)
-                EndPos = Math.max(len, EndPos + 1)
-            }
-
             // Если в выделение попадает ParaEnd, тогда удаляем все кроме этого элемента
             if (true === this.Selection_CheckParaEnd())
             {
@@ -1146,7 +1133,6 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         }
     }
 
-    if (this.isArabic && this.State.ContentPos > 0) --this.State.ContentPos
     return true;
 };
 
@@ -1414,7 +1400,7 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
 
-    var OrigCurPos = this.GetOrigPos(Pos)
+    var OrigCurPos = Pos+Count-1 < this.Content.length ? Math.min(this.GetOrigPos(Pos),this.GetOrigPos(Pos+Count-1)) : this.GetOrigPos(Pos)
     // Получим массив удаляемых элементов
     var DeletedItems = this.Content.slice( OrigCurPos, OrigCurPos + Count );
 	History.Add(new CChangesRunRemoveItem(this, OrigCurPos, DeletedItems));
