@@ -982,8 +982,8 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 	}
 
     if (DeletedItems.length) {
-        DeletedItems.sort(function(a,b) { b.Pos - a.Pos })
-        DeletedItems.slice().reverse().forEach(function(Item) {
+        DeletedItems.sort(function(a,b) { return b.Pos - a.Pos })
+        DeletedItems.forEach(function(Item) {
             this.Content.splice(Item.Pos, 1)
             History.Add(new CChangesParagraphRemoveItem(this, Item.Pos, [Item]));
         }.bind(this))

@@ -1394,8 +1394,9 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
 
-    var OtherPos = Pos+Count-1
-    var OrigCurPos =  OtherPos < this.Content.length ? Math.min(this.GetOrigPos(Pos),this.GetOrigPos(OtherPos)) : this.GetOrigPos(Pos)
+    var OtherPos = Math.min(Pos+Count-1, this.Content.length)
+    var OrigCurPos =  Math.min(this.GetOrigPos(Pos),this.GetOrigPos(OtherPos))
+    
     // Получим массив удаляемых элементов
     var DeletedItems = this.Content.slice( OrigCurPos, OrigCurPos + Count );
 	History.Add(new CChangesRunRemoveItem(this, OrigCurPos, DeletedItems));
