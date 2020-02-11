@@ -1380,27 +1380,22 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 	this.private_UpdateDocumentOutline();
     this.private_UpdateTrackRevisionOnChangeContent(true);
 
-    // the inserted character is after (+1) the current char
     if (this.isRendered && this.isArabic) {
-        // In Arabic we may also need to recalculate our own width again
-        this.RecalcInfo.OnAdd(Pos);
-        if (Pos > 0) this.RecalcInfo.OnAdd(Pos-1);
-        if (Pos > 1) this.RecalcInfo.OnAdd(Pos-2);
-        if (Pos < this.Content.length - 1) this.RecalcInfo.OnAdd(Pos+1);
-        if (Pos < this.Content.length - 2) this.RecalcInfo.OnAdd(Pos+2);
-        this.CollaborativeMarks.Update_OnAdd( Pos );
+        // In Arabic we may need to recalculate whole width again
+        this.RecalcInfo.Measure = true
     }
     else {
         this.RecalcInfo.OnAdd(Pos);
-        // Обновляем позиции меток совместного редактирования
-        this.CollaborativeMarks.Update_OnAdd( Pos );
     }
+    // Обновляем позиции меток совместного редактирования
+    this.CollaborativeMarks.Update_OnAdd( Pos );
 };
 
 ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
 
-    var OrigCurPos = Pos+Count-1 < this.Content.length ? Math.min(this.GetOrigPos(Pos),this.GetOrigPos(Pos+Count-1)) : this.GetOrigPos(Pos)
+    var OtherPos = Pos+Count-1
+    var OrigCurPos =  OtherPos < this.Content.length ? Math.min(this.GetOrigPos(Pos),this.GetOrigPos(OtherPos)) : this.GetOrigPos(Pos)
     // Получим массив удаляемых элементов
     var DeletedItems = this.Content.slice( OrigCurPos, OrigCurPos + Count );
 	History.Add(new CChangesRunRemoveItem(this, OrigCurPos, DeletedItems));
@@ -1464,19 +1459,14 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 	this.private_UpdateTrackRevisionOnChangeContent(true);
 
     if (this.isRendered && this.isArabic) {
-        // In Arabic we may also need to recalculate our own width again
-        this.RecalcInfo.OnAdd(Pos);
-        if (Pos > 0) this.RecalcInfo.OnAdd(Pos-1);
-        if (Pos > 1) this.RecalcInfo.OnAdd(Pos-2);
-        if (Pos < this.Content.length - 1) this.RecalcInfo.OnAdd(Pos+1);
-        if (Pos < this.Content.length - 2) this.RecalcInfo.OnAdd(Pos+2);
-        this.CollaborativeMarks.Update_OnAdd( Pos );
+        // In Arabic we need to recalculate complete width again
+        this.RecalcInfo.Measure = true
     }
     else {
         this.RecalcInfo.OnAdd(Pos);
-        // Обновляем позиции меток совместного редактирования
-        this.CollaborativeMarks.Update_OnAdd( Pos );
     }
+    // Обновляем позиции меток совместного редактирования
+    this.CollaborativeMarks.Update_OnAdd( Pos );
 };
 
 /**
