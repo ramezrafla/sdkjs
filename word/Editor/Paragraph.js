@@ -916,14 +916,14 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos)
 Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 {
 
-    var OrigPos = this.GetOrigPos(Pos)
 	var CommentsToDelete = [];
+    var DeletedItems = [];
 	if (true === this.DeleteCommentOnRemove && null !== this.LogicDocument && null != this.LogicDocument.Comments)
 	{
 		var DocumentComments = this.LogicDocument.Comments;
-		for (var Index = OrigPos; Index < Pos + Count; Index++)
+		for (var Index = Pos; Index < Pos + Count; Index++)
 		{
-			var Item = this.Content[Index];
+			var Item = this.DisplayContent[Index];
 			if (para_Comment === Item.Type)
 			{
 				var CommentId = Item.CommentId;
@@ -942,14 +942,13 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 		}
 	}
 
-	for (var nIndex = OrigPos; nIndex < Pos + Count; ++nIndex)
-	{
-		if (this.Content[nIndex].PreDelete)
-			this.Content[nIndex].PreDelete();
-	}
+    for (var Index = Pos; Index < Pos + Count; Index++) {
+        var Item = this.DisplayContent[Index];
+        if (!Item) break
+        if (Item.PreDelete) Item.PreDelete();
+        DeletedItems.push(Item)
+    }
 
-	var DeletedItems = this.Content.slice(OrigPos, OrigPos + Count);
-	History.Add(new CChangesParagraphRemoveItem(this, OrigPos, DeletedItems));
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks(DeletedItems);
 	this.UpdateDocumentOutline();
@@ -982,8 +981,13 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 			ParaContentPos.Data[0] = Math.max(0, Pos);
 	}
 
-
-    this.Content.splice(OrigPos, Count);
+    if (DeletedItems.length) {
+        DeletedItems.sort(function(a,b) { b.Pos - a.Pos })
+        DeletedItems.slice().reverse().forEach(function(Item) {
+            this.Content.splice(Item.Pos, 1)
+            History.Add(new CChangesParagraphRemoveItem(this, Item.Pos, [Item]));
+        }.bind(this))
+    }
 
 	// Комментарии удаляем после, чтобы не нарушить позиции
 	var CountCommentsToDelete = CommentsToDelete.length;
