@@ -1328,7 +1328,7 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 		Item.SetParent(this);
 
     var OrigCurPos
-    if (this.isArabic) {
+    if (this.isArabic && this.isRendered) {
         if (Pos == this.Content.length) OrigCurPos = 0
         else OrigCurPos = this.GetOrigPos(Pos) + 1
     }
@@ -1397,7 +1397,7 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
 
     var OrigCurPos
-    if (this.isArabic && Count && Count > 1) {
+    if (this.isArabic && this.isRendered && Count && Count > 1) {
         OrigCurPos =  this.GetOrigPos(Pos+Count-1)
     }
     else {
