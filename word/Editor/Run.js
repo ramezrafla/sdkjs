@@ -11896,7 +11896,6 @@ Object.keys(arabicChars).forEach(function(key) {
 })
 
 ParaRun.prototype.GenerateDisplayContent = function() {
-
     var isArabic = false
     var hasArabic = false
     var resultContent = []
@@ -11937,6 +11936,9 @@ ParaRun.prototype.GenerateDisplayContent = function() {
                     //this.Content[i-1].DisplayChar = String.fromCharCode(this.Content[i-1].DisplayValue)
                 }
             }
+        }
+        else {
+            this.Content[i].break = true
         }
         resultContent.push(this.Content[i])
     }

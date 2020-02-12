@@ -212,7 +212,7 @@ Paragraph.prototype.GetType = function()
 	return type_Paragraph;
 };
 Paragraph.prototype.GetOrigPos = function(Pos) {
-    if (!this.isArabic || !this.isRendered) return Pos
+    if (!this.isRendered) return Pos
     if (Pos >= this.DisplayContent.length) return 0
     return this.DisplayContent[Pos].Pos
 }
@@ -16213,9 +16213,12 @@ Paragraph.prototype.GenerateDisplayContent = function(StartPos, EndPos) {
     if (EndPos == undefined) EndPos = this.Content.length - 1
     var currentStack = []
     var mainStack = []
-    var currentStart = -1
     var isArabic = false
-    this.isArabic = this.Content[0].isArabic || (this.Content[1] && this.Content[1].isArabc) || (this.Content[2] && this.Content[2].isArabic)
+
+    this.isArabic = (this.Content[0] && this.Content[0].isArabic) ||
+        (this.Content[1] && this.Content[1].isArabc) ||
+        (this.Content[2] && this.Content[2].isArabic) ||
+        (this.Content[3] && this.Content[3].isArabic)
 
     for (var Pos = StartPos; Pos <= EndPos; Pos++) {
         var Item = this.Content[Pos];
