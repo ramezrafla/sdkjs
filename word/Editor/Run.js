@@ -1324,13 +1324,17 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 	if (-1 === Pos)
 		Pos = this.Content.length;
 
-    // in Arabic we need to affect the prior position as it is RTL
-    if (this.isArabic && this.isRendered && Pos > 0) --Pos
-
 	if (Item.SetParent)
 		Item.SetParent(this);
 
-    var OrigCurPos = this.GetOrigPos(Pos)
+    var OrigCurPos
+    if (this.isArabic) {
+        if (Pos == this.Content.length) OrigCurPos = 0
+        else OrigCurPos = this.GetOrigPos(Pos) + 1
+    }
+    else {
+        OrigCurPos = Pos
+    }
     History.Add(new CChangesRunAddItem(this, OrigCurPos, [Item], true));
     this.Content.splice( OrigCurPos, 0, Item );
     this.GenerateDisplayContent()
