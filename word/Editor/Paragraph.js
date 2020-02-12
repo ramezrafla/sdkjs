@@ -214,16 +214,7 @@ Paragraph.prototype.GetType = function()
 Paragraph.prototype.GetOrigPos = function(Pos) {
     if (!this.isArabic || !this.isRendered) return Pos
     if (Pos >= this.DisplayContent.length) return 0
-    var Item = this.DisplayContent[Pos]
-    var OrigPos = Item.Pos
-    return OrigPos && OrigPos > -1 ? OrigPos : Pos
-}
-Paragraph.prototype.GetOrigRange = function(Pos1,Pos2) {
-    if (!this.isArabic || !this.isRendered) return [Pos1, Pos2]
-    var OrigPos1 = this.GetOrigPos(Pos1)
-    var OrigPos2 = this.GetOrigPos(Pos2)
-    if (OrigPos1 < OrigPos2) return [OrigPos1, OrigPos2]
-    return [OrigPos2, OrigPos1]
+    return this.DisplayContent[Pos].Pos
 }
 Paragraph.prototype.Save_StartState = function()
 {

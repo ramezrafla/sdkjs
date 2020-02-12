@@ -167,9 +167,7 @@ ParaRun.prototype.GetId = function()
 ParaRun.prototype.GetOrigPos = function(Pos) {
     if (!this.isArabic || !this.isRendered) return Pos
     if (Pos >= this.DisplayContent.length) return 0
-    var Item = this.DisplayContent[Pos]
-    var OrigPos = Item.Pos
-    return OrigPos && OrigPos > -1 ? OrigPos : Pos
+    return this.DisplayContent[Pos].Pos
 }
 ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
     if (!this.isArabic || !this.isRendered) return [Pos1, Pos2]
@@ -1394,9 +1392,14 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
 
-    var OtherPos = Math.min(Pos+Count-1, this.Content.length)
-    var OrigCurPos =  Math.min(this.GetOrigPos(Pos),this.GetOrigPos(OtherPos))
-    
+    var OrigCurPos
+    if (this.isArabic && Count && Count > 1) {
+        OrigCurPos =  this.GetOrigPos(Pos+Count-1)
+    }
+    else {
+        OrigCurPos =  this.GetOrigPos(Pos)
+    }
+
     // Получим массив удаляемых элементов
     var DeletedItems = this.Content.slice( OrigCurPos, OrigCurPos + Count );
 	History.Add(new CChangesRunRemoveItem(this, OrigCurPos, DeletedItems));
@@ -11950,7 +11953,7 @@ ParaRun.prototype.GenerateDisplayContent = function() {
         this.isArabic = true
         resultContent.reverse()
         // moving space to beginning
-        if (resultContent[len-1].Type == para_Space) resultContent.unshift(resultContent.pop())
+        // if (resultContent[len-1].Type == para_Space) resultContent.unshift(resultContent.pop())
         this.DisplayContent = resultContent
     }
     else {

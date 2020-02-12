@@ -325,6 +325,7 @@ CChangesRunAddItem.prototype.Load = function(Color)
 			}
 
 			oRun.Content.splice(Pos, 0, Element);
+            oRun.GenerateDisplayContent()
 			oRun.private_UpdatePositionsOnAdd(Pos);
 			oRun.private_UpdateCompositeInputPositionsOnAdd(Pos);
 			AscCommon.CollaborativeEditing.Update_DocumentPositionsOnAdd(oRun, Pos);
@@ -334,7 +335,6 @@ CChangesRunAddItem.prototype.Load = function(Color)
 		}
 	}
 
-    oRun.GenerateDisplayContent()
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
 	oRun.private_UpdateTrackRevisionOnChangeContent(false);
@@ -426,6 +426,7 @@ CChangesRunRemoveItem.prototype.Load = function()
 		{
 			oRun.CollaborativeMarks.Update_OnRemove(nLastChangesPos, nChangesCount);
 			oRun.Content.splice(nLastChangesPos, nChangesCount);
+            oRun.GenerateDisplayContent()
 			oRun.private_UpdatePositionsOnRemove(nLastChangesPos, nChangesCount);
 			oRun.private_UpdateCompositeInputPositionsOnRemove(nLastChangesPos, nChangesCount);
 			AscCommon.CollaborativeEditing.Update_DocumentPositionsOnRemove(oRun, nLastChangesPos, nChangesCount);
