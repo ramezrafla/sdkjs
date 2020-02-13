@@ -11937,6 +11937,9 @@ ParaRun.prototype.GenerateDisplayContent = function() {
                 }
             }
         }
+        else {
+            this.Content[i].break = true
+        }
         resultContent.push(this.Content[i])
     }
 

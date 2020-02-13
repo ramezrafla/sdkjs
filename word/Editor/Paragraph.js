@@ -2148,9 +2148,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 	var StartLine = this.Pages[CurPage].StartLine;
 	var EndLine   = this.Pages[CurPage].EndLine;
 
-    // clearing DisplayContent
-    this.DisplayContent = []
-    this.Content.forEach(function(Item) { delete Item.DisplayPos })
+    this.ClearDisplayContent()
 
 	for (var CurLine = StartLine; CurLine <= EndLine; CurLine++)
 	{
@@ -16227,6 +16225,11 @@ CParagraphRevisionsChangesChecker.prototype.Get_PrChangeUserId = function()
 {
     return this.TextPr.UserId;
 };
+
+Paragraph.prototype.ClearDisplayContent = function() {
+    this.DisplayContent = []
+    this.Content.forEach(function(Item) { delete Item.DisplayPos })
+}
 
 Paragraph.prototype.GenerateDisplayContent = function(StartPos, EndPos) {
     var currentStack = []
