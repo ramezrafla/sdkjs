@@ -768,18 +768,18 @@ ParaRun.prototype.private_SplitRunInCurPos = function()
 		var CurPos = this.State.ContentPos;
 		if (0 === CurPos)
 		{
-			Parent.Add_ToContent(RunPos, NewRun);
+			Parent.Add_ToContent(RunPos, NewRun, true);
 		}
 		else if (this.DisplayContent.length === CurPos)
 		{
-			Parent.Add_ToContent(RunPos + 1, NewRun);
+			Parent.Add_ToContent(RunPos + 1, NewRun, true);
 		}
 		else
 		{
 			// Нужно разделить данный ран в текущей позиции
 			var RightRun = this.Split2(CurPos);
-			Parent.Add_ToContent(RunPos + 1, NewRun);
-			Parent.Add_ToContent(RunPos + 2, RightRun);
+			Parent.Add_ToContent(RunPos + 1, NewRun, true);
+			Parent.Add_ToContent(RunPos + 2, RightRun, true);
 		}
 	}
 
@@ -1382,13 +1382,8 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 	this.private_UpdateDocumentOutline();
     this.private_UpdateTrackRevisionOnChangeContent(true);
 
-    if (this.isRendered && this.isArabic) {
-        // In Arabic we may need to recalculate whole width again
-        this.RecalcInfo.Measure = true
-    }
-    else {
-        this.RecalcInfo.OnAdd(Pos);
-    }
+    this.RecalcInfo.Measure = true
+
     // Обновляем позиции меток совместного редактирования
     this.CollaborativeMarks.Update_OnAdd( Pos );
 };
@@ -1401,7 +1396,7 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
         OrigCurPos =  this.GetOrigPos(Pos+Count-1)
     }
     else {
-        OrigCurPos =  this.GetOrigPos(Pos)
+        OrigCurPos =  Pos
     }
 
     // Получим массив удаляемых элементов
@@ -1466,13 +1461,8 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 	this.private_UpdateDocumentOutline();
 	this.private_UpdateTrackRevisionOnChangeContent(true);
 
-    if (this.isRendered && this.isArabic) {
-        // In Arabic we need to recalculate complete width again
-        this.RecalcInfo.Measure = true
-    }
-    else {
-        this.RecalcInfo.OnAdd(Pos);
-    }
+    this.RecalcInfo.Measure = true
+
     // Обновляем позиции меток совместного редактирования
     this.CollaborativeMarks.Update_OnAdd( Pos );
 };
@@ -2018,7 +2008,15 @@ ParaRun.prototype.Split = function (ContentPos, Depth)
 
 ParaRun.prototype.Split2 = function(CurPos, Parent, ParentPos)
 {
-    History.Add(new CChangesRunOnStartSplit(this, CurPos));
+    var OrigCurPos
+    if (this.isArabic && this.isRendered) {
+        if (CurPos == this.Content.length) OrigCurPos = 0
+        else OrigCurPos = this.GetOrigPos(CurPos) + 1
+    }
+    else {
+        OrigCurPos = CurPos
+    }
+    History.Add(new CChangesRunOnStartSplit(this, OrigCurPos));
     AscCommon.CollaborativeEditing.OnStart_SplitRun(this, CurPos);
 
     // Если задается Parent и ParentPos, тогда ран автоматически добавляется в родительский класс
@@ -2067,7 +2065,7 @@ ParaRun.prototype.Split2 = function(CurPos, Parent, ParentPos)
 
     if (true === UpdateParent)
     {
-        Parent.Add_ToContent(ParentPos + 1, NewRun);
+        Parent.Add_ToContent(ParentPos + 1, NewRun, true);
 
         // Обновим массив NearPosArray
         for (var Index = 0, Count = this.NearPosArray.length; Index < Count; Index++)
@@ -2128,8 +2126,9 @@ ParaRun.prototype.Split2 = function(CurPos, Parent, ParentPos)
 
 
 	// Разделяем содержимое по ранам
-    NewRun.ConcatToContent( this.Content.slice(CurPos) );
-    this.Remove_FromContent( CurPos, this.Content.length - CurPos, true );
+    NewRun.ConcatToContent( this.Content.slice(OrigCurPos) );
+    this.isRendered = false
+    this.Remove_FromContent( OrigCurPos, this.Content.length - OrigCurPos, true );
 
     // Если были точки орфографии, тогда переместим их в новый ран
     var SpellingMarksCount = this.SpellingMarks.length;
@@ -11936,9 +11935,6 @@ ParaRun.prototype.GenerateDisplayContent = function() {
                     //this.Content[i-1].DisplayChar = String.fromCharCode(this.Content[i-1].DisplayValue)
                 }
             }
-        }
-        else {
-            this.Content[i].break = true
         }
         resultContent.push(this.Content[i])
     }

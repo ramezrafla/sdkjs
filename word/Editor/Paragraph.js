@@ -216,6 +216,11 @@ Paragraph.prototype.GetOrigPos = function(Pos) {
     if (Pos >= this.DisplayContent.length) return 0
     return this.DisplayContent[Pos].Pos
 }
+Paragraph.prototype.GetDisplayPos = function(Pos) {
+    if (!this.isRendered) return Pos
+    if (Pos >= this.Content.length) return 0
+    return this.Content[Pos].DisplayPos
+}
 Paragraph.prototype.Save_StartState = function()
 {
 	this.StartState = new CParagraphStartState(this);
@@ -687,16 +692,14 @@ Paragraph.prototype.CopyPr_Open = function(OtherParagraph)
  * Добавляем элемент в содержимое параграфа. (Здесь передвигаются все позиции
  * CurPos.ContentPos, Selection.StartPos, Selection.EndPos)
  */
-Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bCorrectPos)
+Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bOrigPos)
 {
-    var OrigPos = this.GetOrigPos(Pos)
+    var OrigPos = bOrigPos ? Pos : this.GetOrigPos(Pos)
+    if (bOrigPos) Pos = this.GetDisplayPos(Pos)
 	History.Add(new CChangesParagraphAddItem(this, OrigPos, [Item]));
     Item.Pos = OrigPos
 	this.Content.splice(OrigPos, 0, Item);
-    if (this.Content !== this.DisplayContent) {
-        if (Item.isArabic) this.DisplayContent.splice(Pos+1, 0, Item)
-        else this.DisplayContent.splice(Pos, 0, Item)
-    }
+    if (this.Content !== this.DisplayContent) this.DisplayContent.splice(Pos, 0, Item)
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -771,13 +774,13 @@ Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bCorrectPos)
 
 	Item.SetParagraph(this);
 };
-Paragraph.prototype.Add_ToContent = function(Pos, Item)
+Paragraph.prototype.Add_ToContent = function(Pos, Item, bOrigPos)
 {
-	this.Internal_Content_Add(Pos, Item);
+	this.Internal_Content_Add(Pos, Item, bOrigPos);
 };
-Paragraph.prototype.AddToContent = function(nPos, oItem)
+Paragraph.prototype.AddToContent = function(nPos, oItem, bOrigPos)
 {
-	this.Add_ToContent(nPos, oItem);
+	this.Add_ToContent(nPos, oItem, bOrigPos);
 };
 Paragraph.prototype.Remove_FromContent = function(Pos, Count)
 {
