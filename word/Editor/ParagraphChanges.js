@@ -324,7 +324,7 @@ CChangesParagraphAddItem.prototype.Undo = function()
 {
 	var oParagraph = this.Class;
 	oParagraph.Content.splice(this.Pos, this.Items.length);
-    oParagraph.GenerateDisplayContent()
+    oParagraph.DisplayContent = oParagraph.Content.slice()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 	private_ParagraphChangesOnSetValue(this.Class);
@@ -336,7 +336,7 @@ CChangesParagraphAddItem.prototype.Redo = function()
 	var Array_end   = oParagraph.Content.slice(this.Pos);
 
 	oParagraph.Content = Array_start.concat(this.Items, Array_end);
-    oParagraph.GenerateDisplayContent()
+    oParagraph.DisplayContent = oParagraph.Content.slice()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 	private_ParagraphChangesOnSetValue(this.Class);
@@ -395,7 +395,7 @@ CChangesParagraphAddItem.prototype.Load = function(Color)
 		}
 	}
 
-    oParagraph.GenerateDisplayContent()
+    oParagraph.DisplayContent = oParagraph.Content.slice()
 	oParagraph.private_ResetSelection();
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
@@ -447,7 +447,7 @@ CChangesParagraphRemoveItem.prototype.Undo = function()
 	var Array_end   = oParagraph.Content.slice(this.Pos);
 
 	oParagraph.Content = Array_start.concat(this.Items, Array_end);
-    oParagraph.GenerateDisplayContent()
+    oParagraph.DisplayContent = oParagraph.Content.slice()
 
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
@@ -469,7 +469,7 @@ CChangesParagraphRemoveItem.prototype.Redo = function()
 {
 	var oParagraph  = this.Class;
 	oParagraph.Content.splice(this.Pos, this.Items.length);
-    oParagraph.GenerateDisplayContent()
+    oParagraph.DisplayContent = oParagraph.Content.slice()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 	private_ParagraphChangesOnSetValue(this.Class);
@@ -495,7 +495,7 @@ CChangesParagraphRemoveItem.prototype.Load = function(Color)
 		oParagraph.Content.splice(ChangesPos, 1);
 		AscCommon.CollaborativeEditing.Update_DocumentPositionsOnRemove(oParagraph, ChangesPos, 1);
 	}
-    oParagraph.GenerateDisplayContent()
+    oParagraph.DisplayContent = oParagraph.Content.slice()
 	oParagraph.private_ResetSelection();
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);

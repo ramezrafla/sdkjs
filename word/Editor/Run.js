@@ -173,8 +173,8 @@ ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
     if (!this.isArabic || !this.isRendered) return [Pos1, Pos2]
     var OrigPos1 = this.GetOrigPos(Pos1)
     var OrigPos2 = this.GetOrigPos(Pos2)
-    if (OrigPos1 < OrigPos2) return [OrigPos1, OrigPos2]
-    return [OrigPos2, OrigPos1]
+    if (OrigPos1 < OrigPos2) return [OrigPos1, Math.min(OrigPos2, this.Content.length)]
+    return [OrigPos2, Math.min(OrigPos1, this.Content.length)]
 }
 ParaRun.prototype.HasSpaces = function() {
   var spacesCount = 0
@@ -4634,11 +4634,12 @@ ParaRun.prototype.Recalculate_PageEndInfo = function(PRSI, _CurLine, _CurRange)
 	var CurRange = ( 0 === CurLine ? _CurRange - this.StartRange : _CurRange );
 
 	var StartPos = this.protected_GetRangeStartPos(CurLine, CurRange);
-	var EndPos   = this.protected_GetRangeEndPos(CurLine, CurRange);
+	var EndPos   = this.protected_GetRangeEndPos(CurLine, CurRange)
 
 	for (var Pos = StartPos; Pos < EndPos; ++Pos)
 	{
 		var Item = this.DisplayContent[Pos];
+        if (!Item) return
 		if (para_FieldChar === Item.Type)
 		{
 			PRSI.ProcessFieldChar(Item);
