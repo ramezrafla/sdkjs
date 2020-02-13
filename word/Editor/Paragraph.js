@@ -5908,6 +5908,10 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 	if (this.NearPosArray.length >= 1)
 		return;
 
+    if (!this.DisplayContent[_EndPos]) {
+        this.GenerateDisplayContent(_StartPos, _EndPos)
+    }
+
 	// В данной функции мы корректируем содержимое параграфа:
 	// 1. Спаренные пустые раны мы удаляем (удаляем 1 ран)
 	// 2. Удаляем пустые гиперссылки, пустые формулы, пустые поля
@@ -11110,7 +11114,7 @@ Paragraph.prototype.Split = function(NewParagraph)
 
 	// Разделяем текущий элемент (возвращается правая, отделившаяся часть, если она null, тогда заменяем
 	// ее на пустой ран с заданными настройками).
-    var OrigCurPos = this.GetOrigPos(ContentPos)
+    var OrigCurPos = this.GetOrigPos(CurPos)
 	var NewElement = this.Content[OrigCurPos].Split(ContentPos, 1);
 
 	if (null === NewElement)
@@ -16211,15 +16215,16 @@ CParagraphRevisionsChangesChecker.prototype.Get_PrChangeUserId = function()
 };
 
 Paragraph.prototype.GenerateDisplayContent = function(StartPos, EndPos) {
-    if (StartPos == undefined && EndPos == undefined) this.DisplayContent = []
+    if ((StartPos == undefined && EndPos == undefined) || (this.Content === this.DisplayContent)) this.DisplayContent = []
     if (StartPos == undefined) StartPos = 0
     if (EndPos == undefined) EndPos = this.Content.length - 1
     var currentStack = []
     var mainStack = []
     var isArabic = false
 
-    this.isArabic = (this.Content[0] && this.Content[0].isArabic) ||
-        (this.Content[1] && this.Content[1].isArabc) ||
+    this.isArabic =
+        (this.Content[0] && this.Content[0].isArabic) ||
+        (this.Content[1] && this.Content[1].isArabic) ||
         (this.Content[2] && this.Content[2].isArabic) ||
         (this.Content[3] && this.Content[3].isArabic)
 
