@@ -13573,11 +13573,11 @@ Paragraph.prototype.GetCurrentComplexFields = function(bReturnFieldPos)
 		}
 	}
 
-	var nEndPos = this.GetOrigPos(Math.min(this.CurPos.ContentPos, this.DisplayContent.length - 1));
+	var nEndPos = Math.min(this.CurPos.ContentPos, this.DisplayContent.length - 1);
 	for (var nIndex = 0; nIndex <= nEndPos; ++nIndex)
 	{
-		if (this.Content[nIndex].GetCurrentComplexFields)
-			this.Content[nIndex].GetCurrentComplexFields(arrComplexFields, nIndex === nEndPos, bReturnFieldPos);
+		if (this.DisplayContent[nIndex].GetCurrentComplexFields)
+			this.DisplayContent[nIndex].GetCurrentComplexFields(arrComplexFields, nIndex === nEndPos, bReturnFieldPos);
 	}
 
 	return arrComplexFields;
