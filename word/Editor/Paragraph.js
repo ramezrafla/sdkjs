@@ -706,7 +706,7 @@ Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bOrigPos)
 	History.Add(new CChangesParagraphAddItem(this, OrigPos, [Item]));
     Item.Pos = OrigPos
 	this.Content.splice(OrigPos, 0, Item);
-    if (this.Content !== this.DisplayContent) this.DisplayContent.splice(Pos, 0, Item)
+    this.DisplayContent.splice(Pos, 0, Item)
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -804,7 +804,7 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
 {
 	var StartPos = this.Content.length;
 	this.Content = this.Content.concat(Items);
-    if (this.Content != this.DisplayContent) this.DisplayContent.concat(Items);
+    this.DisplayContent.concat(Items);
 
 	History.Add(new CChangesParagraphAddItem(this, StartPos, Items));
 	this.private_UpdateTrackRevisions();
@@ -836,7 +836,7 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos)
 		Item.PreDelete();
 
 	this.Content.splice(OrigPos, 1);
-    if (this.Content !== this.DisplayContent) this.DisplayContent.splice(Pos, 1)
+    this.DisplayContent.splice(Pos, 1)
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -989,12 +989,10 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
             this.Content.splice(Item.Pos, 1)
             History.Add(new CChangesParagraphRemoveItem(this, Item.Pos, [Item]));
         }.bind(this))
-        if (this.Content != this.DisplayContent) {
-            DeletedItems.sort(function(a,b) { return b.DisplayPos - a.DisplayPos })
-            DeletedItems.forEach(function(Item) {
-                this.DisplayContent.splice(Item.DisplayPos, 1)
-            }.bind(this))
-        }
+        DeletedItems.sort(function(a,b) { return b.DisplayPos - a.DisplayPos })
+        DeletedItems.forEach(function(Item) {
+            this.DisplayContent.splice(Item.DisplayPos, 1)
+        }.bind(this))
     }
 
 	// Комментарии удаляем после, чтобы не нарушить позиции
@@ -15986,7 +15984,7 @@ function CParagraphStartState(Paragraph)
     this.Pr = Paragraph.Pr.Copy();
     this.TextPr = Paragraph.TextPr;
     this.Content = Paragraph.Content.slice()
-    this.DisplayContent = Paragraph.Content.slice()
+    this.DisplayContent = this.Content.slice()
 }
 
 function CParagraphTabsCounter()
