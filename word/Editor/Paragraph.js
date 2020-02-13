@@ -5925,21 +5925,17 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 	if (this.NearPosArray.length >= 1)
 		return;
 
-    var Arr = this.GetOrigRange(_StartPos,_EndPos)
-    _StartPos = Arr[0]
-    _EndPos = Arr[1]
-
 	// В данной функции мы корректируем содержимое параграфа:
 	// 1. Спаренные пустые раны мы удаляем (удаляем 1 ран)
 	// 2. Удаляем пустые гиперссылки, пустые формулы, пустые поля
 	// 3. Добавляем пустой ран в место, где нет рана (например, между двумя идущими подряд гиперссылками)
 
 	var StartPos = ( undefined === _StartPos || null === _StartPos ? 0 : Math.max(_StartPos - 1, 0) );
-	var EndPos   = ( undefined === _EndPos || null === _EndPos ? this.Content.length - 1 : Math.min(_EndPos + 1, this.Content.length - 1) );
+	var EndPos   = ( undefined === _EndPos || null === _EndPos ? this.DisplayContent.length - 1 : Math.min(_EndPos + 1, this.DisplayContent.length - 1) );
 
 	for (var CurPos = EndPos; CurPos >= StartPos; CurPos--)
 	{
-		var CurElement = this.Content[CurPos];
+		var CurElement = this.DisplayContent[CurPos];
 
 		if ((para_Hyperlink === CurElement.Type || para_Math === CurElement.Type || para_Field === CurElement.Type || para_InlineLevelSdt === CurElement.Type) && true === CurElement.Is_Empty() && true !== CurElement.Is_CheckingNearestPos())
 		{
@@ -5947,7 +5943,7 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 		}
 		else if (para_Run !== CurElement.Type)
 		{
-			if (CurPos === this.Content.length - 1 || para_Run !== this.Content[CurPos + 1].Type || CurPos === this.Content.length - 2)
+			if (CurPos === this.DisplayContent.length - 1 || para_Run !== this.DisplayContent[CurPos + 1].Type || CurPos === this.DisplayContent.length - 2)
 			{
 				var NewRun = new ParaRun(this);
 				this.Internal_Content_Add(CurPos + 1, NewRun);
@@ -5965,18 +5961,18 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 			if (true !== bDoNotDeleteEmptyRuns)
 			{
 				// TODO (Para_End): Предпоследний элемент мы не проверяем, т.к. на ран с Para_End мы не ориентируемся
-				if (true === CurElement.Is_Empty() && (0 < CurPos || para_Run !== this.Content[CurPos].Type) && CurPos < this.Content.length - 2 && para_Run === this.Content[CurPos + 1].Type)
+				if (true === CurElement.Is_Empty() && (0 < CurPos || para_Run !== this.DisplayContent[CurPos].Type) && CurPos < this.DisplayContent.length - 2 && para_Run === this.DisplayContent[CurPos + 1].Type)
 					this.Internal_Content_Remove(CurPos);
 			}
 		}
 	}
 
 	// Проверим, чтобы предпоследний элемент был Run
-	if (1 === this.Content.length || para_Run !== this.Content[this.Content.length - 2].Type)
+	if (1 === this.DisplayContent.length || para_Run !== this.DisplayContent[0].Type)
 	{
 		var NewRun = new ParaRun(this);
 		NewRun.Set_Pr(this.TextPr.Value.Copy());
-		this.Internal_Content_Add(this.Content.length - 1, NewRun);
+		this.Internal_Content_Add(0, NewRun);
 	}
 
 	this.Correct_ContentPos2();
