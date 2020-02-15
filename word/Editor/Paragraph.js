@@ -2148,6 +2148,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 
 	var StartLine = this.Pages[CurPage].StartLine;
 	var EndLine   = this.Pages[CurPage].EndLine;
+    var CurItem = this.CurPos.ContentPos && this.DisplayContent[this.CurPos.ContentPos]
 
     this.ClearDisplayContent()
 
@@ -2401,6 +2402,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 		}
 	}
     this.isRendered = true
+    if (CurItem) this.CurPos.ContentPos = CurItem.DisplayPos
 };
 Paragraph.prototype.Internal_Draw_5 = function(CurPage, pGraphics, Pr, BgColor)
 {
@@ -16226,6 +16228,10 @@ CParagraphRevisionsChangesChecker.prototype.Get_PrChangeUserId = function()
 {
     return this.TextPr.UserId;
 };
+
+Paragraph.prototype.DebugDisplayContent = function() {
+    console.log(this.DisplayContent.map(function(Item) { return Item.string + '[' + Item.DisplayPos + ',' + Item.Pos }))
+}
 
 Paragraph.prototype.ClearDisplayContent = function() {
     this.DisplayContent = []
