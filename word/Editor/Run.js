@@ -649,8 +649,9 @@ ParaRun.prototype.Add = function(Item, bMath)
             var RightRun = this.Split2(CurPos);
             var RunPos = this.private_GetPosInParent(this.Parent);
             this.GetParent().Internal_Content_Add(RunPos+1, RightRun, true);
-            RightRun.Make_ThisElementCurrent(true);
-            RightRun.MoveCursorToStartPos()
+            if (this.isArabic) RightRun.MoveCursorToEndPos()
+            else RightRun.MoveCursorToStartPos()
+            RightRun.Make_ThisElementCurrent();
         }
 		else if (this.Type === para_Run && Item.CanStartAutoCorrect())
 			this.ProcessAutoCorrect(this.State.ContentPos - 1);
