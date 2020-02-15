@@ -516,22 +516,10 @@ ParaRun.prototype.Add = function(Item, bMath)
 		}
 	}
 
-    // we split Run's along space boundaries to allow for RTL positioning
-    if (Item.Type == para_Space && this.Content.length)
-    {
-        var NewRun = this.private_SplitRunInCurPos();
-        if (NewRun)
-        {
-            NewRun.MoveCursorToStartPos();
-            NewRun.Add(Item, bMath);
-            NewRun.Make_ThisElementCurrent();
-            return;
-        }
-    }
 
 	if (this.Paragraph && this.Paragraph.LogicDocument)
 	{
-		// Специальный код, связанный с обработкой изменения языка ввода при наборе.
+		// Специальный код, связанный с обр2аботкой изменения языка ввода при наборе.
 		if (true === this.Paragraph.LogicDocument.CheckLanguageOnTextAdd && editor)
 		{
 			var nRequiredLanguage = editor.asc_getKeyboardLanguage();
@@ -654,6 +642,16 @@ ParaRun.prototype.Add = function(Item, bMath)
     else
 	{
 		this.private_AddItemToRun(this.State.ContentPos, Item);
+        // we split Run's along space boundaries to allow for RTL positioning
+        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 3)
+        {
+            var CurPos = this.State.ContentPos;
+            var RightRun = this.Split2(CurPos);
+            var RunPos = this.private_GetPosInParent(this.Parent);
+            this.GetParent().Internal_Content_Add(RunPos+1, RightRun, true);
+            RightRun.Make_ThisElementCurrent();
+            RightRun.State.ContentPos = 1
+        }
 
 		if (this.Type === para_Run && Item.CanStartAutoCorrect())
 			this.ProcessAutoCorrect(this.State.ContentPos - 1);
