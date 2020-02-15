@@ -643,17 +643,16 @@ ParaRun.prototype.Add = function(Item, bMath)
 	{
 		this.private_AddItemToRun(this.State.ContentPos, Item);
         // we split Run's along space boundaries to allow for RTL positioning
-        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 3)
+        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 2)
         {
             var CurPos = this.State.ContentPos;
             var RightRun = this.Split2(CurPos);
             var RunPos = this.private_GetPosInParent(this.Parent);
             this.GetParent().Internal_Content_Add(RunPos+1, RightRun, true);
-            RightRun.Make_ThisElementCurrent();
-            RightRun.State.ContentPos = 1
+            RightRun.Make_ThisElementCurrent(true);
+            RightRun.MoveCursorToStartPos()
         }
-
-		if (this.Type === para_Run && Item.CanStartAutoCorrect())
+		else if (this.Type === para_Run && Item.CanStartAutoCorrect())
 			this.ProcessAutoCorrect(this.State.ContentPos - 1);
 	}
 
@@ -1394,7 +1393,7 @@ ParaRun.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
         OrigCurPos =  this.GetOrigPos(Pos+Count-1)
     }
     else {
-        OrigCurPos =  Pos
+        OrigCurPos =  this.GetOrigPos(Pos)
     }
 
     // Получим массив удаляемых элементов

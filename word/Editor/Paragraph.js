@@ -705,6 +705,7 @@ Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bOrigPos)
     if (bOrigPos) Pos = this.GetDisplayPos(Pos)
 	History.Add(new CChangesParagraphAddItem(this, OrigPos, [Item]));
     Item.Pos = OrigPos
+    Item.DisplayPos = Pos
 	this.Content.splice(OrigPos, 0, Item);
     this.DisplayContent.splice(Pos, 0, Item)
 	this.private_UpdateTrackRevisions();
@@ -804,7 +805,7 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
 {
 	var StartPos = this.Content.length;
 	this.Content = this.Content.concat(Items);
-    this.DisplayContent.concat(Items);
+    this.DisplayContent = this.DisplayContent.concat(Items);
 
 	History.Add(new CChangesParagraphAddItem(this, StartPos, Items));
 	this.private_UpdateTrackRevisions();
