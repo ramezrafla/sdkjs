@@ -2410,7 +2410,10 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 		}
 	}
     this.isRendered = true
-    if (CurItem) this.CurPos.ContentPos = CurItem.DisplayPos
+    if (CurItem) {
+        this.CurPos.ContentPos = CurItem.DisplayPos
+        this.LogicDocument.private_UpdateCursorXY()
+    }
 };
 Paragraph.prototype.Internal_Draw_5 = function(CurPage, pGraphics, Pr, BgColor)
 {
