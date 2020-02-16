@@ -11954,15 +11954,11 @@ ParaRun.prototype.GenerateDisplayContent = function() {
                 start = i
                 this.Content[i].DisplayValue = arabicChar.initial
                 this.Content[i].break = arabicChar.break
-                //this.Content[i].Char = String.fromCharCode(value)
-                //this.Content[i].DisplayChar = String.fromCharCode(this.Content[i].DisplayValue)
             }
             else {
                 if (arabicChar) {
                     this.Content[i].DisplayValue = this.Content[i-1].break ? arabicChar.initial : arabicChar.medial
                     this.Content[i].break = arabicChar.break
-                    //this.Content[i].Char = String.fromCharCode(value)
-                    //this.Content[i].DisplayChar = String.fromCharCode(this.Content[i].DisplayValue)
                 }
                 // period or comma
                 else {
@@ -11972,7 +11968,6 @@ ParaRun.prototype.GenerateDisplayContent = function() {
                     arabicChar = arabicChars[this.Content[i-1].Value]
                     if (diff == 1) this.Content[i-1].DisplayValue = arabicChar.isolated
                     else this.Content[i-1].DisplayValue = this.Content[i-2].break ? arabicChar.isolated : arabicChar.final
-                    //this.Content[i-1].DisplayChar = String.fromCharCode(this.Content[i-1].DisplayValue)
                 }
             }
         }
@@ -11996,8 +11991,6 @@ ParaRun.prototype.GenerateDisplayContent = function() {
     if (hasArabic) {
         this.isArabic = true
         resultContent.reverse()
-        // moving space to beginning
-        // if (resultContent[len-1].Type == para_Space) resultContent.unshift(resultContent.pop())
         this.DisplayContent = resultContent
     }
     else {
