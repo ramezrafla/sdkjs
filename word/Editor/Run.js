@@ -11926,6 +11926,7 @@ ParaRun.prototype.GenerateDisplayContent = function() {
                 }
                 // period or comma
                 else {
+                    this.Content[i].break = true
                     isArabic = false
                     diff = i - start
                     arabicChar = arabicChars[this.Content[i-1].Value]
