@@ -323,8 +323,10 @@ CChangesParagraphAddItem.prototype.Type = AscDFH.historyitem_Paragraph_AddItem;
 CChangesParagraphAddItem.prototype.Undo = function()
 {
 	var oParagraph = this.Class;
+    var Item = oParagraph.Content[this.Pos] || oParagraph.Content[this.Pos-1]
 	oParagraph.Content.splice(this.Pos, this.Items.length);
     oParagraph.DisplayContent = oParagraph.Content.slice()
+    oParagraph.CurItem = Item
     oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
@@ -449,7 +451,8 @@ CChangesParagraphRemoveItem.prototype.Undo = function()
 	var Array_start = oParagraph.Content.slice(0, this.Pos);
 	var Array_end   = oParagraph.Content.slice(this.Pos);
 
-	oParagraph.Content = Array_start.concat(this.Items, Array_end);
+    oParagraph.Content = Array_start.concat(this.Items, Array_end);
+    oParagraph.CurItem = this.Items[0]
     oParagraph.DisplayContent = oParagraph.Content.slice()
     oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();

@@ -2156,7 +2156,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 
 	var StartLine = this.Pages[CurPage].StartLine;
 	var EndLine   = this.Pages[CurPage].EndLine;
-    var CurItem = this.CurPos.ContentPos && this.DisplayContent[this.CurPos.ContentPos]
+    var CurItem = this.CurItem || this.CurPos.ContentPos && this.DisplayContent[this.CurPos.ContentPos]
 
     this.ClearDisplayContent()
 
@@ -2411,6 +2411,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 	}
     this.isRendered = true
     if (CurItem) {
+        this.CurItem = null
         this.CurPos.ContentPos = CurItem.DisplayPos
         this.LogicDocument.private_UpdateCursorXY()
     }

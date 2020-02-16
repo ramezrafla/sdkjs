@@ -1147,6 +1147,7 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
                 this.Add_ToContent(0, Item, false, true)
             }.bind(this))
             Parent.Internal_Content_Remove(RunPos, true)
+            this.Make_ThisElementCurrent()
         }
     }
     else if (this.isArabic && this.State.ContentPos == 0 && this.Content.length && this.Content[this.Content.length-1].Type == para_Text) {
@@ -1159,6 +1160,7 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
                 this.Add_ToContent(this.Content.length, Item, false, true)
             }.bind(this))
             Parent.Internal_Content_Remove(RunPos, true)
+            this.Make_ThisElementCurrent()
         }
     }
 
@@ -10154,6 +10156,7 @@ ParaRun.prototype.SetThisElementCurrentInParagraph = function()
 
 	oContentPos.Add(this.State.ContentPos);
 	this.Paragraph.Set_ParaContentPos(oContentPos, true, -1, -1, false);
+    this.Paragraph.CurItem = this
 };
 ParaRun.prototype.SelectThisElement = function(nDirection)
 {
