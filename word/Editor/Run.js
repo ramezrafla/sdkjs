@@ -514,7 +514,8 @@ ParaRun.prototype.Add = function(Item, bMath)
         var NewRun = this.private_SplitRunInCurPos();
 		if (NewRun)
 		{
-			NewRun.MoveCursorToStartPos();
+			if (this.isArabic) NewRun.MoveCursorEndPos();
+            else NewRun.MoveCursorToStartPos();
 			NewRun.Add(Item, bMath);
 			NewRun.SetThisElementCurrentInParagraph();
 			return;
@@ -647,15 +648,16 @@ ParaRun.prototype.Add = function(Item, bMath)
     else
 	{
 		this.private_AddItemToRun(this.State.ContentPos, Item);
-        // we split Run's along space boundaries to allow for RTL positioning
-        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 2)
+        // we split Runs along space boundaries to allow for RTL positioning
+        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 1)
         {
             var CurPos = this.State.ContentPos;
             var RightRun = this.Split2(CurPos);
             var Parent = this.GetParent()
             var RunPos = this.private_GetPosInParent(Parent);
             Parent.Internal_Content_Add(RunPos+1, RightRun, true);
-            RightRun.MoveCursorToStartPos()
+            if (this.isArabic) RightRun.MoveCursorToEndPos()
+            else RightRun.MoveCursorToStartPos()
             RightRun.Make_ThisElementCurrent();
         }
 		else if (this.Type === para_Run && Item.CanStartAutoCorrect())
@@ -1135,7 +1137,7 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
     }
 
     /// now we merge with next Run if we have no spaces and are at the end
-    if (this.isArabic && this.State.ContentPos == this.Content.length && this.Content[this.Content.length-1].Type == para_Text) {
+    if (this.isArabic && this.State.ContentPos == this.Content.length && this.Content[0].Type == para_Text) {
         var Parent = this.GetParent()
         var RunPos = this.private_GetPosInParent(Parent);
         --RunPos
@@ -1147,6 +1149,22 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         if (NextRun && NextRun.Content.length && NextRun.Content[NextRun.Content.length-1].Type == para_Text && NextRun.isArabic) {
             NextRun.Content.reverse().forEach(function(Item) {
                 this.Add_ToContent(0, Item, false, true)
+            }.bind(this))
+            Parent.Internal_Content_Remove(RunPos, true)
+        }
+    }
+    else if (this.isArabic && this.State.ContentPos == 0 && this.Content.length && this.Content[this.Content.length-1].Type == para_Text) {
+        var Parent = this.GetParent()
+        var RunPos = this.private_GetPosInParent(Parent);
+        ++RunPos
+        var NextRun = Parent.Content[RunPos]
+        if (NextRun && NextRun.Content.length == 1 && NextRun.Content[0].Type == para_Space) {
+            ++RunPos
+            NextRun = Parent.Content[RunPos]
+        }
+        if (NextRun && NextRun.Content.length && NextRun.Content[0].Type == para_Text && NextRun.isArabic) {
+            NextRun.Content.forEach(function(Item) {
+                this.Add_ToContent(this.Content.length, Item, false, true)
             }.bind(this))
             Parent.Internal_Content_Remove(RunPos, true)
         }
@@ -7228,6 +7246,7 @@ ParaRun.prototype.IsSelectionEmpty = function(CheckEnd)
         StartPos = Selection.EndPos;
         EndPos   = Selection.StartPos;
     }
+    EndPos = Math.min(this.DisplayContent.length, EndPos)
 
     if ( true === CheckEnd )
         return ( EndPos > StartPos ? false : true );

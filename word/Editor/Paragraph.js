@@ -708,6 +708,7 @@ Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bOrigPos)
     Item.DisplayPos = Pos
 	this.Content.splice(OrigPos, 0, Item);
     this.DisplayContent.splice(Pos, 0, Item)
+    this.UpdateContentIndexing()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -843,6 +844,7 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 
 	this.Content.splice(OrigPos, 1);
     this.DisplayContent.splice(Pos, 1)
+    this.UpdateContentIndexing()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -999,6 +1001,7 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
         DeletedItems.forEach(function(Item) {
             this.DisplayContent.splice(Item.DisplayPos, 1)
         }.bind(this))
+        this.UpdateContentIndexing()
     }
 
 	// Комментарии удаляем после, чтобы не нарушить позиции
@@ -11553,6 +11556,7 @@ Paragraph.prototype.Read_FromBinary2 = function(Reader)
 		}
 	}
     this.DisplayContent = this.Content.slice()
+    this.UpdateContentIndexing()
 
 	AscCommon.CollaborativeEditing.Add_NewObject(this);
 
@@ -15672,6 +15676,7 @@ CRunRecalculateObject.prototype =
             this.Content[Index] = Content[Index].SaveRecalculateObject(Copy);
         }
         this.DisplayContent = this.Content.slice()
+        this.UpdateContentIndexing()
     },
 
     Save_MathInfo: function(Obj, Copy)
@@ -15991,6 +15996,7 @@ function CParagraphStartState(Paragraph)
     this.TextPr = Paragraph.TextPr;
     this.Content = Paragraph.Content.slice()
     this.DisplayContent = this.Content.slice()
+    this.UpdateContentIndexing()
 }
 
 function CParagraphTabsCounter()
@@ -16240,7 +16246,15 @@ Paragraph.prototype.DebugDisplayContent = function() {
 
 Paragraph.prototype.ClearDisplayContent = function() {
     this.DisplayContent = []
-    this.Content.forEach(function(Item) { delete Item.DisplayPos })
+    this.Content.forEach(function(Item, Pos) {
+        delete Item.DisplayPos
+        Item.Pos = Pos
+    })
+}
+
+Paragraph.prototype.UpdateContentIndexing = function() {
+    this.Content.forEach(function(Item, Pos) { Item.Pos = Pos})
+    this.DisplayContent.forEach(function(Item, Pos) { Item.DisplayPos = Pos})
 }
 
 Paragraph.prototype.GenerateDisplayContent = function(StartPos, EndPos) {
