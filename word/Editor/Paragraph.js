@@ -833,7 +833,7 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
     var OrigPos
     if (bOrigPos) {
         OrigPos = Pos
-        Pos = this.GetDisplayPos(Pos)
+        Pos = this.GetDisplayPos(OrigPos)
     }
     else OrigPos = this.GetOrigPos(Pos)
 	var Item = this.Content[OrigPos];

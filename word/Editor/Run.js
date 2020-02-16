@@ -1142,12 +1142,8 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         var RunPos = this.private_GetPosInParent(Parent);
         --RunPos
         var NextRun = Parent.Content[RunPos]
-        if (NextRun && NextRun.Content.length == 1 && NextRun.Content[0].Type == para_Space) {
-            --RunPos
-            NextRun = Parent.Content[RunPos]
-        }
         if (NextRun && NextRun.Content.length && NextRun.Content[NextRun.Content.length-1].Type == para_Text && NextRun.isArabic) {
-            NextRun.Content.reverse().forEach(function(Item) {
+            NextRun.Content.slice().reverse().forEach(function(Item) {
                 this.Add_ToContent(0, Item, false, true)
             }.bind(this))
             Parent.Internal_Content_Remove(RunPos, true)
@@ -1158,10 +1154,6 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         var RunPos = this.private_GetPosInParent(Parent);
         ++RunPos
         var NextRun = Parent.Content[RunPos]
-        if (NextRun && NextRun.Content.length == 1 && NextRun.Content[0].Type == para_Space) {
-            ++RunPos
-            NextRun = Parent.Content[RunPos]
-        }
         if (NextRun && NextRun.Content.length && NextRun.Content[0].Type == para_Text && NextRun.isArabic) {
             NextRun.Content.forEach(function(Item) {
                 this.Add_ToContent(this.Content.length, Item, false, true)

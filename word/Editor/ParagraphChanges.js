@@ -325,6 +325,7 @@ CChangesParagraphAddItem.prototype.Undo = function()
 	var oParagraph = this.Class;
 	oParagraph.Content.splice(this.Pos, this.Items.length);
     oParagraph.DisplayContent = oParagraph.Content.slice()
+    oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 	private_ParagraphChangesOnSetValue(this.Class);
@@ -337,6 +338,7 @@ CChangesParagraphAddItem.prototype.Redo = function()
 
 	oParagraph.Content = Array_start.concat(this.Items, Array_end);
     oParagraph.DisplayContent = oParagraph.Content.slice()
+    oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 	private_ParagraphChangesOnSetValue(this.Class);
@@ -396,6 +398,7 @@ CChangesParagraphAddItem.prototype.Load = function(Color)
 	}
 
     oParagraph.DisplayContent = oParagraph.Content.slice()
+    oParagraph.UpdateContentIndexing()
 	oParagraph.private_ResetSelection();
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
@@ -448,7 +451,7 @@ CChangesParagraphRemoveItem.prototype.Undo = function()
 
 	oParagraph.Content = Array_start.concat(this.Items, Array_end);
     oParagraph.DisplayContent = oParagraph.Content.slice()
-
+    oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 	private_ParagraphChangesOnSetValue(this.Class);
@@ -470,6 +473,7 @@ CChangesParagraphRemoveItem.prototype.Redo = function()
 	var oParagraph  = this.Class;
 	oParagraph.Content.splice(this.Pos, this.Items.length);
     oParagraph.DisplayContent = oParagraph.Content.slice()
+    oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 	private_ParagraphChangesOnSetValue(this.Class);
@@ -496,6 +500,7 @@ CChangesParagraphRemoveItem.prototype.Load = function(Color)
 		AscCommon.CollaborativeEditing.Update_DocumentPositionsOnRemove(oParagraph, ChangesPos, 1);
 	}
     oParagraph.DisplayContent = oParagraph.Content.slice()
+    oParagraph.UpdateContentIndexing()
 	oParagraph.private_ResetSelection();
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
