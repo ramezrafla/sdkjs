@@ -827,9 +827,14 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
  * Удаляем элемент из содержимого параграфа. (Здесь передвигаются все позиции
  * CurPos.ContentPos, Selection.StartPos, Selection.EndPos)
  */
-Paragraph.prototype.Internal_Content_Remove = function(Pos)
+Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 {
-    var OrigPos = this.GetOrigPos(Pos)
+    var OrigPos
+    if (bOrigPos) {
+        OrigPos = Pos
+        Pos = this.GetDisplayPos(Pos)
+    }
+    else OrigPos = this.GetOrigPos(Pos)
 	var Item = this.Content[OrigPos];
 	History.Add(new CChangesParagraphRemoveItem(this, OrigPos, [Item]));
 

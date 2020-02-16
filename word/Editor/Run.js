@@ -169,6 +169,11 @@ ParaRun.prototype.GetOrigPos = function(Pos) {
     if (Pos >= this.DisplayContent.length) return 0
     return this.DisplayContent[Pos].Pos
 }
+ParaRun.prototype.GetDisplayPos = function(Pos) {
+    if (!this.isArabic || !this.isRendered) return Pos
+    if (Pos >= this.Content.length) return 0
+    return this.Content[Pos].DisplayPos
+}
 ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
     if (!this.isArabic || !this.isRendered) return [Pos1, Pos2]
     var OrigPos1 = this.GetOrigPos(Pos1)
@@ -647,10 +652,10 @@ ParaRun.prototype.Add = function(Item, bMath)
         {
             var CurPos = this.State.ContentPos;
             var RightRun = this.Split2(CurPos);
-            var RunPos = this.private_GetPosInParent(this.Parent);
-            this.GetParent().Internal_Content_Add(RunPos+1, RightRun, true);
-            if (this.isArabic) RightRun.MoveCursorToEndPos()
-            else RightRun.MoveCursorToStartPos()
+            var Parent = this.GetParent()
+            var RunPos = this.private_GetPosInParent(Parent);
+            Parent.Internal_Content_Add(RunPos+1, RightRun, true);
+            RightRun.MoveCursorToStartPos()
             RightRun.Make_ThisElementCurrent();
         }
 		else if (this.Type === para_Run && Item.CanStartAutoCorrect())
@@ -1129,6 +1134,24 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         }
     }
 
+    /// now we merge with next Run if we have no spaces and are at the end
+    if (this.isArabic && this.State.ContentPos == this.Content.length && this.Content[this.Content.length-1].Type == para_Text) {
+        var Parent = this.GetParent()
+        var RunPos = this.private_GetPosInParent(Parent);
+        --RunPos
+        var NextRun = Parent.Content[RunPos]
+        if (NextRun && NextRun.Content.length == 1 && NextRun.Content[0].Type == para_Space) {
+            --RunPos
+            NextRun = Parent.Content[RunPos]
+        }
+        if (NextRun && NextRun.Content.length && NextRun.Content[NextRun.Content.length-1].Type == para_Text && NextRun.isArabic) {
+            NextRun.Content.reverse().forEach(function(Item) {
+                this.Add_ToContent(0, Item, false, true)
+            }.bind(this))
+            Parent.Internal_Content_Remove(RunPos, true)
+        }
+    }
+
     return true;
 };
 
@@ -1317,7 +1340,7 @@ ParaRun.prototype.GetLogicDocument = function()
 };
 
 // Добавляем элемент в позицию с сохранием в историю
-ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
+ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition, bOrigPos)
 {
 	if (-1 === Pos)
 		Pos = this.Content.length;
@@ -1326,7 +1349,11 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 		Item.SetParent(this);
 
     var OrigCurPos
-    if (this.isArabic && this.isRendered) {
+    if (bOrigPos) {
+        OrigCurPos = Pos
+        Pos = this.GetDisplayPos(OrigCurPos)
+    }
+    else if (this.isArabic && this.isRendered) {
         if (Pos == this.Content.length) OrigCurPos = 0
         else OrigCurPos = this.GetOrigPos(Pos) + 1
     }
@@ -7236,6 +7263,8 @@ ParaRun.prototype.Selection_CheckParaEnd = function()
         EndPos   = Selection.StartPos;
     }
 
+    EndPos = Math.min(this.DisplayContent.length, EndPos)
+
     for ( var CurPos = StartPos; CurPos < EndPos; CurPos++ )
     {
         var Item = this.DisplayContent[CurPos];
@@ -10860,13 +10889,13 @@ ParaRun.prototype.GetAllFields = function(isUseSelection, arrFields)
 		}
 	}
 };
-ParaRun.prototype.AddToContent = function(nPos, oItem, isUpdatePositions)
+ParaRun.prototype.AddToContent = function(nPos, oItem, isUpdatePositions, bOrigPos)
 {
-	return this.Add_ToContent(nPos, oItem, isUpdatePositions);
+	return this.Add_ToContent(nPos, oItem, isUpdatePositions, bOrigPos);
 };
-ParaRun.prototype.RemoveFromContent = function(nPos, nCount, isUpdatePositions)
+ParaRun.prototype.RemoveFromContent = function(nPos, nCount, isUpdatePositions, bOrigPos)
 {
-	return this.Remove_FromContent(nPos, nCount, isUpdatePositions);
+	return this.Remove_FromContent(nPos, nCount, isUpdatePositions, bOrigPos);
 };
 ParaRun.prototype.GetComplexField = function(nType)
 {
@@ -11947,7 +11976,6 @@ ParaRun.prototype.GenerateDisplayContent = function() {
         if (arabicChar) {
             if (len == 1) this.Content[0].DisplayValue = arabicChar.isolated
             else this.Content[len-1].DisplayValue = this.Content[len-2].break ? arabicChar.isolated : arabicChar.final
-            //this.Content[len-1].DisplayChar = String.fromCharCode(this.Content[len-1].DisplayValue)
         }
     }
 
