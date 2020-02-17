@@ -16248,14 +16248,6 @@ Paragraph.prototype.DebugDisplayContent = function() {
     console.log(this.DisplayContent.map(function(Item) { return Item.string + '[' + Item.DisplayPos + ',' + Item.Pos }))
 }
 
-Paragraph.prototype.ClearDisplayContent = function() {
-    this.DisplayContent = []
-    this.Content.forEach(function(Item, Pos) {
-        delete Item.DisplayPos
-        Item.Pos = Pos
-    })
-}
-
 Paragraph.prototype.GetNextWord = function(Item) {
     if (!this.isArabic) return this.Content[Item.Pos+1]
     var len = this.DisplayContent.length
@@ -16263,7 +16255,7 @@ Paragraph.prototype.GetNextWord = function(Item) {
     var NextItem
     if (Item.DisplayPos) {
         NextItem = this.DisplayContent[Item.DisplayPos-1]
-        if (NextItem && NextItem.LineNumber == curLine) return NextItem
+        if (NextItem.LineNumber == curLine) return NextItem
     }
     // move to next line
     var DisplayPos = Item.DisplayPos+1
