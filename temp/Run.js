@@ -2607,11 +2607,11 @@ ParaRun.prototype.GetSelectDirection = function()
 
 ParaRun.prototype.Can_AddDropCap = function()
 {
-    var Count = this.Content.length;
+    var Count = this.DisplayContent.length;
 
     for ( var Pos = 0; Pos < Count; Pos++ )
     {
-        var Item = this.Content[Pos];
+        var Item = this.DisplayContent[Pos];
         var ItemType = Item.Type;
 
         switch ( ItemType )
@@ -2633,11 +2633,11 @@ ParaRun.prototype.Can_AddDropCap = function()
 
 ParaRun.prototype.Get_TextForDropCap = function(DropCapText, UseContentPos, ContentPos, Depth)
 {
-    var EndPos = ( true === UseContentPos ? this.GetOrigPos(ContentPos.Get(Depth)) : this.Content.length );
+    var EndPos = ( true === UseContentPos ? this.GetOrigPos(ContentPos.Get(Depth)) : this.DisplayContent.length );
 
     for ( var Pos = 0; Pos < EndPos; Pos++ )
     {
-        var Item = this.Content[Pos];
+        var Item = this.DisplayContent[Pos];
         var ItemType = Item.Type;
 
         if ( true === DropCapText.Check )
@@ -4832,10 +4832,10 @@ ParaRun.prototype.PrepareRecalculateObject = function()
 {
 	this.protected_ClearLines();
 
-	var Count = this.Content.length;
+	var Count = this.DisplayContent.length;
 	for (var Index = 0; Index < Count; Index++)
 	{
-		var Item     = this.Content[Index];
+		var Item     = this.DisplayContent[Index];
 		var ItemType = Item.Type;
 
 		if (para_PageNum === ItemType || para_Drawing === ItemType)
@@ -4903,10 +4903,10 @@ ParaRun.prototype.Check_MathPara = function(Checker)
 
 ParaRun.prototype.Check_PageBreak = function()
 {
-    var Count = this.Content.length;
+    var Count = this.DisplayContent.length;
     for (var Pos = 0; Pos < Count; Pos++)
     {
-        var Item = this.Content[Pos];
+        var Item = this.DisplayContent[Pos];
         if (para_NewLine === Item.Type && (break_Page === Item.BreakType || break_Column === Item.BreakType))
             return true;
     }
@@ -4916,10 +4916,10 @@ ParaRun.prototype.Check_PageBreak = function()
 
 ParaRun.prototype.Check_BreakPageEnd = function(PBChecker)
 {
-    var ContentLen = this.Content.length;
+    var ContentLen = this.DisplayContent.length;
     for ( var CurPos = 0; CurPos < ContentLen; CurPos++ )
     {
-        var Item = this.Content[CurPos];
+        var Item = this.DisplayContent[CurPos];
 
         if ( true === PBChecker.FindPB )
         {
@@ -9901,16 +9901,16 @@ ParaRun.prototype.ApplyPoints = function(PointsInfo)
     {
         this.size.width = 0;
 
-        for(var Pos = 0; Pos < this.Content.length; Pos++)
+        for(var Pos = 0; Pos < this.DisplayContent.length; Pos++)
         {
-            var Item = this.Content[Pos];
+            var Item = this.DisplayContent[Pos];
             if(Item.Type === para_Math_Ampersand && true === Item.IsAlignPoint())
             {
                 PointsInfo.NextAlignRange();
                 Item.size.width = PointsInfo.GetAlign();
             }
 
-            this.size.width += this.Content[Pos].Get_WidthVisible(); // Get_Width => Get_WidthVisible
+            this.size.width += this.DisplayContent[Pos].Get_WidthVisible(); // Get_Width => Get_WidthVisible
                                                                      // Get_WidthVisible - Width + Gaps с учетом настроек состояния
         }
     }

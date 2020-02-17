@@ -273,9 +273,9 @@ Paragraph.prototype.SetDirectTextPr = function(oTextPr)
 	// TODO: Пока мы пробегаемся только по верхним элементам параграфа (без поиска в глубину), т.к. данная функция используется
 	//       только для новых параграфов
 
-	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+	for (var nIndex = 0, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 	{
-		var oRun = this.Content[nIndex];
+		var oRun = this.DisplayContent[nIndex];
 		if (oRun.Type === para_Run)
 		{
 			oRun.Set_Pr(oTextPr.Copy());
@@ -310,7 +310,7 @@ Paragraph.prototype.Copy = function(Parent, DrawingDocument, oPr)
 	Para.TextPr.Set_Value(this.TextPr.Value.Copy());
 
 	// Удаляем содержимое нового параграфа
-	Para.Internal_Content_Remove2(0, Para.Content.length);
+	Para.Internal_Content_Remove2(0, Para.Content.length, true);
 
 	// Копируем содержимое параграфа
 	var Count = this.Content.length;
@@ -321,7 +321,7 @@ Paragraph.prototype.Copy = function(Parent, DrawingDocument, oPr)
 		if (para_Comment === Item.Type && true === oPr.SkipComments)
 			continue;
 
-		Para.Internal_Content_Add(Para.Content.length, Item.Copy(false, oPr), false);
+		Para.Internal_Content_Add(Para.Content.length, Item.Copy(false, oPr), true);
 	}
 
 	// TODO: Как только переделаем para_End, переделать тут
@@ -358,14 +358,14 @@ Paragraph.prototype.Copy2 = function(Parent)
 	Para.TextPr.Set_Value(this.TextPr.Value.Copy());
 
 	// Удаляем содержимое нового параграфа
-	Para.Internal_Content_Remove2(0, Para.Content.length);
+	Para.Internal_Content_Remove2(0, Para.Content.length, true);
 
 	// Копируем содержимое параграфа
 	var Count = this.Content.length;
 	for (var Index = 0; Index < Count; Index++)
 	{
 		var Item = this.Content[Index];
-		Para.Internal_Content_Add(Para.Content.length, Item.Copy2(), false);
+		Para.Internal_Content_Add(Para.Content.length, Item.Copy2(), true);
 	}
 
 
@@ -791,13 +791,13 @@ Paragraph.prototype.AddToContent = function(nPos, oItem, bOrigPos)
 {
 	this.Add_ToContent(nPos, oItem, bOrigPos);
 };
-Paragraph.prototype.Remove_FromContent = function(Pos, Count)
+Paragraph.prototype.Remove_FromContent = function(Pos, Count, bOrigPos)
 {
-	this.Internal_Content_Remove2(Pos, Count);
+	this.Internal_Content_Remove2(Pos, Count, bOrigPos);
 };
-Paragraph.prototype.RemoveFromContent = function(nPos, nCount)
+Paragraph.prototype.RemoveFromContent = function(nPos, nCount, bOrigPos)
 {
-	return this.Internal_Content_Remove2(nPos, nCount);
+	return this.Internal_Content_Remove2(nPos, nCount, bOrigPos);
 };
 /**
  * Добавляем несколько элементов в конец параграфа
@@ -806,7 +806,7 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
 {
 	var StartPos = this.Content.length;
 	this.Content = this.Content.concat(Items);
-    this.DisplayContent = this.DisplayContent.concat(Items);
+    this.DisplayContent = this.Content.slice();
 
 	History.Add(new CChangesParagraphAddItem(this, StartPos, Items));
 	this.private_UpdateTrackRevisions();
@@ -830,12 +830,16 @@ Paragraph.prototype.Internal_Content_Concat = function(Items)
  */
 Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 {
-    var OrigPos
+    var OrigPos, DisplayPos
     if (bOrigPos) {
         OrigPos = Pos
-        Pos = this.GetDisplayPos(OrigPos)
+        DisplayPos = this.GetDisplayPos(OrigPos)
     }
-    else OrigPos = this.GetOrigPos(Pos)
+    else {
+        DisplayPos = Pos
+        OrigPos = this.GetOrigPos(DisplayPos)
+    }
+
 	var Item = this.Content[OrigPos];
 	History.Add(new CChangesParagraphRemoveItem(this, OrigPos, [Item]));
 
@@ -843,13 +847,13 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 		Item.PreDelete();
 
 	this.Content.splice(OrigPos, 1);
-    this.DisplayContent.splice(Pos, 1)
+    this.DisplayContent.splice(DisplayPos, 1)
     this.UpdateContentIndexing()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
 
-	if (this.Selection.StartPos > Pos)
+	if (this.Selection.StartPos > DisplayPos)
 	{
 		this.Selection.StartPos--;
 
@@ -857,7 +861,7 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 			this.Selection.StartPos = 0;
 	}
 
-	if (this.Selection.EndPos >= Pos)
+	if (this.Selection.EndPos >= DisplayPos)
 	{
 		this.Selection.EndPos--;
 
@@ -865,7 +869,7 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 			this.Selection.EndPos = 0;
 	}
 
-	if (this.CurPos.ContentPos > Pos)
+	if (this.CurPos.ContentPos > DisplayPos)
 	{
 		this.CurPos.ContentPos--;
 
@@ -889,12 +893,12 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 	{
 		var ContentPos = this.SearchResults[Id].StartPos;
 
-		if (ContentPos.Data[0] > Pos)
+		if (ContentPos.Data[0] > DisplayPos)
 			ContentPos.Data[0]--;
 
 		ContentPos = this.SearchResults[Id].EndPos;
 
-		if (ContentPos.Data[0] > Pos)
+		if (ContentPos.Data[0] > DisplayPos)
 			ContentPos.Data[0]--;
 	}
 
@@ -923,8 +927,18 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 /**
  * Удаляем несколько элементов
  */
-Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
+Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count, bOrigPos)
 {
+
+    var OrigPos, DisplayPos
+    if (bOrigPos) {
+        OrigPos = Pos
+        DisplayPos = this.GetDisplayPos(OrigPos)
+    }
+    else {
+        DisplayPos = Pos
+        OrigPos = this.GetOrigPos(DisplayPos)
+    }
 
 	var CommentsToDelete = [];
     var DeletedItems = [];
@@ -933,7 +947,7 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 		var DocumentComments = this.LogicDocument.Comments;
 		for (var Index = Pos; Index < Pos + Count; Index++)
 		{
-			var Item = this.DisplayContent[Index];
+			var Item = bOrigPos ? this.Content[Index] : this.DisplayContent[Index];
 			if (para_Comment === Item.Type)
 			{
 				var CommentId = Item.CommentId;
@@ -953,7 +967,7 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 	}
 
     for (var Index = Pos; Index < Pos + Count; Index++) {
-        var Item = this.DisplayContent[Index];
+        var Item = bOrigPos ? this.Content[Index] : this.DisplayContent[Index];
         if (!Item) break
         if (Item.PreDelete) Item.PreDelete();
         DeletedItems.push(Item)
@@ -963,20 +977,20 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 	this.private_CheckUpdateBookmarks(DeletedItems);
 	this.UpdateDocumentOutline();
 
-	if (this.Selection.StartPos > Pos + Count)
+	if (this.Selection.StartPos > DisplayPos + Count)
 		this.Selection.StartPos -= Count;
-	else if (this.Selection.StartPos > Pos)
-		this.Selection.StartPos = Pos;
+	else if (this.Selection.StartPos > DisplayPos)
+		this.Selection.StartPos = DisplayPos;
 
-	if (this.Selection.EndPos > Pos + Count)
+	if (this.Selection.EndPos > DisplayPos + Count)
 		this.Selection.EndPos -= Count;
-	if (this.Selection.EndPos > Pos)
-		this.Selection.EndPos = Pos;
+	if (this.Selection.EndPos > DisplayPos)
+		this.Selection.EndPos = DisplayPos;
 
-	if (this.CurPos.ContentPos > Pos + Count)
+	if (this.CurPos.ContentPos > DisplayPos + Count)
 		this.CurPos.ContentPos -= Count;
 	else if (this.CurPos.ContentPos > Pos)
-		this.CurPos.ContentPos = Pos;
+		this.CurPos.ContentPos = DisplayPos;
 
 	// Обновляем позиции в NearestPos
 	var NearPosLen = this.NearPosArray.length;
@@ -985,9 +999,9 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 		var ParaNearPos    = this.NearPosArray[Index];
 		var ParaContentPos = ParaNearPos.NearPos.ContentPos;
 
-		if (ParaContentPos.Data[0] > Pos + Count)
+		if (ParaContentPos.Data[0] > DisplayPos + Count)
 			ParaContentPos.Data[0] -= Count;
-		else if (ParaContentPos.Data[0] > Pos)
+		else if (ParaContentPos.Data[0] > DisplayPos)
 			ParaContentPos.Data[0] = Math.max(0, Pos);
 	}
 
@@ -5961,7 +5975,7 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 			}
 
 			// Для начального элемента проверим еще и предыдущий
-			if (StartPos === CurPos && ( 0 === CurPos || para_Run !== this.Content[CurPos - 1].Type  ))
+			if (StartPos === CurPos && ( 0 === CurPos || para_Run !== this.DisplayContent[CurPos - 1].Type  ))
 			{
 				var NewRun = new ParaRun(this);
 				this.Internal_Content_Add(CurPos, NewRun);
@@ -5983,7 +5997,7 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 	{
 		var NewRun = new ParaRun(this);
 		NewRun.Set_Pr(this.TextPr.Value.Copy());
-		this.Internal_Content_Add(0, NewRun);
+		this.Internal_Content_Add(0, NewRun, true);
 	}
 
 	this.Correct_ContentPos2();
@@ -6482,7 +6496,7 @@ Paragraph.prototype.ModifyHyperlink = function(HyperProps)
 			var TextPr = Hyperlink.Get_TextPr();
 
 			// Удаляем все что было в гиперссылке
-			Hyperlink.Remove_FromContent(0, Hyperlink.Content.length);
+			Hyperlink.Remove_FromContent(0, Hyperlink.Content.length, true);
 
 			// Создаем текстовый ран в гиперссылке
 			var HyperRun = new ParaRun(this);
@@ -8728,10 +8742,10 @@ Paragraph.prototype.RecalcCompiledPr = function()
 };
 Paragraph.prototype.Recalc_RunsCompiledPr = function()
 {
-	var Count = this.Content.length;
+	var Count = this.DisplayContent.length;
 	for (var Pos = 0; Pos < Count; Pos++)
 	{
-		var Element = this.Content[Pos];
+		var Element = this.DisplayContent[Pos];
 
 		if (Element.Recalc_RunsCompiledPr)
 			Element.Recalc_RunsCompiledPr();
@@ -9283,9 +9297,9 @@ Paragraph.prototype.Clear_TextFormatting = function()
 		sDefHyperlink = this.LogicDocument.GetStyles().GetDefaultHyperlink();
 	}
 
-	for (var Index = 0; Index < this.Content.length; Index++)
+	for (var Index = 0; Index < this.DisplayContent.length; Index++)
 	{
-		var Item = this.Content[Index];
+		var Item = this.DisplayContent[Index];
 		Item.Clear_TextFormatting(sDefHyperlink);
 	}
 
@@ -9397,9 +9411,9 @@ Paragraph.prototype.Set_Align = function(Align)
 		this.CompiledPr.NeedRecalc = true;
 		this.private_UpdateTrackRevisionOnChangeParaPr(true);
 
-		for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+		for (var nIndex = 0, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 		{
-			var oElement = this.Content[nIndex];
+			var oElement = this.DisplayContent[nIndex];
 			if (para_Math === oElement.Type && true !== oElement.Is_Inline())
 				oElement.Set_Align(Align);
 		}
@@ -10942,12 +10956,12 @@ Paragraph.prototype.Split_DropCap = function(NewParagraph)
 			CurrRun = new ParaRun(NewParagraph);
 			CurrRun.Set_Pr(DropCapText.Runs[Pos].Pr.Copy());
 
-			NewParagraph.Internal_Content_Add(ParaPos++, CurrRun, false);
+			NewParagraph.Internal_Content_Add(ParaPos++, CurrRun, true);
 
 			RunPos = 0;
 		}
 
-		CurrRun.Add_ToContent(RunPos++, DropCapText.Text[Pos], false);
+		CurrRun.Add_ToContent(RunPos++, DropCapText.Text[Pos], true);
 	}
 
 	if (Count > 0)
@@ -11154,18 +11168,18 @@ Paragraph.prototype.Split = function(NewParagraph)
 	//    добавляем в начало нового параграфа.
 
 	var NewContent = this.Content.slice(OrigCurPos + 1);
-	this.Internal_Content_Remove2(CurPos + 1, this.Content.length - OrigCurPos - 1);
+	this.Internal_Content_Remove2(OrigCurPos + 1, this.Content.length - OrigCurPos - 1, true);
 
 	// В старый параграф добавим ран с концом параграфа
 	var EndRun = new ParaRun(this);
 	EndRun.Add_ToContent(0, new ParaEnd());
 
-	this.Internal_Content_Add(this.Content.length, EndRun);
+	this.Internal_Content_Add(this.Content.length, EndRun, true);
 
 	// Очищаем новый параграф и добавляем в него Right элемент и NewContent
-	NewParagraph.Internal_Content_Remove2(0, NewParagraph.Content.length);
+	NewParagraph.Internal_Content_Remove2(0, NewParagraph.Content.length, true);
 	NewParagraph.Internal_Content_Concat(NewContent);
-	NewParagraph.Internal_Content_Add(0, NewElement);
+	NewParagraph.Internal_Content_Add(0, NewElement, true);
 	NewParagraph.Correct_Content();
 
 	// Копируем все настройки в новый параграф. Делаем это после того как определили контент параграфов.
@@ -11223,7 +11237,7 @@ Paragraph.prototype.Concat = function(Para, isUseConcatedStyle)
 	this.Internal_Content_Concat(NewContent);
 
 	// Удалим из параграфа все элементы (это нужно, чтобы не лежали ссылки на одинаковые объекты в разных параграфах)
-	Para.Internal_Content_Remove2(0, Para.Content.length);
+	Para.Internal_Content_Remove2(0, Para.Content.length, true);
 
 	// Если на данном параграфе оканчивалась секция, тогда удаляем эту секцию
 	this.Set_SectionPr(undefined);
@@ -11846,10 +11860,10 @@ Paragraph.prototype.CanAddComment = function()
 };
 Paragraph.prototype.RemoveCommentMarks = function(Id)
 {
-	var Count = this.Content.length;
+	var Count = this.DisplayContent.length;
 	for (var Pos = 0; Pos < Count; Pos++)
 	{
-		var Item = this.Content[Pos];
+		var Item = this.DisplayContent[Pos];
 		if (para_Comment === Item.Type && Id === Item.CommentId)
 		{
 			this.Internal_Content_Remove(Item.DisplayPos);
@@ -13238,9 +13252,9 @@ Paragraph.prototype.GetLineEndPos = function(CurLine)
 Paragraph.prototype.CheckCommentStartEnd = function(sCommentId)
 {
 	var oResult = {Start : false, End : false};
-	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
+	for (var nIndex = 0, nCount = this.DisplayContent.length; nIndex < nCount; ++nIndex)
 	{
-		var oElement = this.Content[nIndex];
+		var oElement = this.DisplayContent[nIndex];
 		if (para_Comment === oElement.Type && sCommentId === oElement.GetCommentId())
 		{
 			if (oElement.IsCommentStart())
@@ -14148,12 +14162,12 @@ Paragraph.prototype.AddTrackMoveMark = function(isFrom, isStart, sMarkId)
  */
 Paragraph.prototype.RemoveElement = function(oElement)
 {
-	for (var nPos = 0, nCount = this.DisplayContent.length; nPos < nCount; ++nPos)
+	for (var nPos = 0, nCount = this.Content.length; nPos < nCount; ++nPos)
 	{
-		var oItem = this.DisplayContent[nPos];
+		var oItem = this.Content[nPos];
 		if (oItem === oElement)
 		{
-			this.Internal_Content_Remove(nPos);
+			this.Internal_Content_Remove(nPos, true);
 			nPos--;
 			nCount--;
 		}
@@ -16248,13 +16262,6 @@ Paragraph.prototype.DebugDisplayContent = function() {
     console.log(this.DisplayContent.map(function(Item) { return Item.string + '[' + Item.DisplayPos + ',' + Item.Pos }))
 }
 
-Paragraph.prototype.ClearDisplayContent = function() {
-    this.DisplayContent = []
-    this.Content.forEach(function(Item, Pos) {
-        delete Item.DisplayPos
-        Item.Pos = Pos
-    })
-}
 
 Paragraph.prototype.GetNextWord = function(Item) {
     if (!this.isArabic) return this.Content[Item.Pos+1]
@@ -16263,7 +16270,7 @@ Paragraph.prototype.GetNextWord = function(Item) {
     var NextItem
     if (Item.DisplayPos) {
         NextItem = this.DisplayContent[Item.DisplayPos-1]
-        if (NextItem && NextItem.LineNumber == curLine) return NextItem
+        if (NextItem.LineNumber == curLine) return NextItem
     }
     // move to next line
     var DisplayPos = Item.DisplayPos+1
@@ -16283,7 +16290,7 @@ Paragraph.prototype.GetPrevWord = function(Item) {
     var len = this.DisplayContent.length
     var curLine = Item.LineNumber
     var PrevItem = this.DisplayContent[Item.DisplayPos+1]
-    if (PrevItem && PrevItem.LineNumber == curLine) return PrevItem
+    if (PrevItem.LineNumber == curLine) return PrevItem
     // move to previous line
     var DisplayPos = Item.DisplayPos-1
     while (DisplayPos >= 0 && this.DisplayContent[DisplayPos].LineNumber == curLine) --DisplayPos
