@@ -16291,8 +16291,6 @@ Paragraph.prototype.ClearDisplayContent = function() {
     this.DisplayContent = []
     this.Content.forEach(function(Item, Pos) {
         delete Item.DisplayPos
-        delete Item.Next
-        delete Item.Prev
         delete Item.LineNumber
         delete Item.LinePos
         Item.Pos = Pos
