@@ -1364,8 +1364,8 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition, bOrigPos)
         Pos = this.GetDisplayPos(OrigCurPos)
     }
     else if (this.isArabic && this.isRendered) {
-        if (Pos == this.Content.length) OrigCurPos = 0
-        else OrigCurPos = this.GetOrigPos(Pos) + 1
+        OrigCurPos = this.GetOrigPos(Pos)
+        if (OrigCurPos < this.DisplayContent.length) ++OrigCurPos
     }
     else {
         OrigCurPos = Pos

@@ -1576,6 +1576,8 @@ Paragraph.prototype.Draw = function(CurPage, pGraphics)
 		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_PARAGRAPH);
 	}
 
+    this.GenerateDisplayContent()
+
 	var Pr = this.Get_CompiledPr();
 
 	// Задаем обрезку, если данный параграф является рамкой
@@ -2169,9 +2171,6 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 
 	var StartLine = this.Pages[CurPage].StartLine;
 	var EndLine   = this.Pages[CurPage].EndLine;
-    var CurItem = this.CurItem || this.CurPos.ContentPos && this.DisplayContent[this.CurPos.ContentPos]
-
-    this.GenerateDisplayContent()
 
 	for (var CurLine = StartLine; CurLine <= EndLine; CurLine++)
 	{
@@ -2421,11 +2420,6 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 			pGraphics.End_Command();
 		}
 	}
-    if (CurItem) {
-        this.CurItem = null
-        this.CurPos.ContentPos = CurItem.DisplayPos
-        this.LogicDocument.private_UpdateCursorXY()
-    }
     this.isRendered = true
 };
 Paragraph.prototype.Internal_Draw_5 = function(CurPage, pGraphics, Pr, BgColor)
@@ -16309,6 +16303,7 @@ Paragraph.prototype.UpdateContentIndexing = function() {
 }
 
 Paragraph.prototype.GenerateDisplayContent = function() {
+    var CurItem = this.CurItem || this.CurPos.ContentPos >= 0 && this.CurPos.ContentPos < this.DisplayContent.length && this.DisplayContent[this.CurPos.ContentPos]
     this.DisplayContent = []
     this.Content.forEach(function(Item, Pos) {
         delete Item.DisplayPos
@@ -16393,6 +16388,14 @@ Paragraph.prototype.GenerateDisplayContent = function() {
         }
 
     }.bind(this))
+
+    if (CurItem) {
+        this.CurItem = null
+        if (this.CurPos.ContentPos != CurItem.DisplayPos) {
+            this.CurPos.ContentPos = CurItem.DisplayPos
+            this.LogicDocument.private_UpdateCursorXY()
+        }
+    }
 }
 
 //--------------------------------------------------------export----------------------------------------------------
