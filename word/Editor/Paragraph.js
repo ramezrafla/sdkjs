@@ -791,13 +791,13 @@ Paragraph.prototype.AddToContent = function(nPos, oItem, bOrigPos)
 {
 	this.Add_ToContent(nPos, oItem, bOrigPos);
 };
-Paragraph.prototype.Remove_FromContent = function(Pos, Count)
+Paragraph.prototype.Remove_FromContent = function(Pos, Count, bOrigPos)
 {
-	this.Internal_Content_Remove2(Pos, Count);
+	this.Internal_Content_Remove2(Pos, Count, bOrigPos);
 };
-Paragraph.prototype.RemoveFromContent = function(nPos, nCount)
+Paragraph.prototype.RemoveFromContent = function(nPos, nCount, bOrigPos)
 {
-	return this.Internal_Content_Remove2(nPos, nCount);
+	return this.Internal_Content_Remove2(nPos, nCount, bOrigPos);
 };
 /**
  * Добавляем несколько элементов в конец параграфа
@@ -923,60 +923,69 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 /**
  * Удаляем несколько элементов
  */
-Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
+Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count, bOrigPos)
 {
-
-	var CommentsToDelete = [];
+    var DisplayPos, OrigPos
+    var CommentsToDelete = [];
     var DeletedItems = [];
-	if (true === this.DeleteCommentOnRemove && null !== this.LogicDocument && null != this.LogicDocument.Comments)
-	{
-		var DocumentComments = this.LogicDocument.Comments;
-		for (var Index = Pos; Index < Pos + Count; Index++)
-		{
-			var Item = this.DisplayContent[Index];
-			if (para_Comment === Item.Type)
-			{
-				var CommentId = Item.CommentId;
-				var Comment   = DocumentComments.Get_ById(CommentId);
 
-				if (null != Comment)
-				{
-					if (true === Item.Start)
-						Comment.Set_StartId(null);
-					else
-						Comment.Set_EndId(null);
-				}
-
-				CommentsToDelete.push(CommentId);
-			}
-		}
-	}
-
-    for (var Index = Pos; Index < Pos + Count; Index++) {
-        var Item = this.DisplayContent[Index];
-        if (!Item) break
-        if (Item.PreDelete) Item.PreDelete();
-        DeletedItems.push(Item)
+    if (bOrigPos) {
+        OrigPos = Pos
+        DisplayPos = this.GetDisplayPos(OrigPos)
+        for (var Index = OrigPos; Index < OrigPos + Count; Index++) {
+            var Item = this.Content[Index];
+            if (!Item) break
+            if (Item.PreDelete) Item.PreDelete();
+            DeletedItems.push(Item)
+        }
     }
+    else {
+        DisplayPos = Pos
+        OrigPos = this.GetOrigPos(DisplayPos)
+        for (var Index = DisplayPos; Index < DisplayPos + Count; Index++) {
+            var Item = this.DisplayContent[Index];
+            if (!Item) break
+            if (Item.PreDelete) Item.PreDelete();
+            DeletedItems.push(Item)
+        }
+    }
+
+    DeletedItems.forEach(function(Item) {
+        if (para_Comment === Item.Type)
+        {
+            var CommentId = Item.CommentId;
+            var Comment   = DocumentComments.Get_ById(CommentId);
+
+            if (null != Comment)
+            {
+                if (true === Item.Start)
+                    Comment.Set_StartId(null);
+                else
+                    Comment.Set_EndId(null);
+            }
+
+            CommentsToDelete.push(CommentId);
+        }
+    })
 
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks(DeletedItems);
 	this.UpdateDocumentOutline();
 
-	if (this.Selection.StartPos > Pos + Count)
+	if (this.Selection.StartPos > DisplayPos + Count)
 		this.Selection.StartPos -= Count;
-	else if (this.Selection.StartPos > Pos)
-		this.Selection.StartPos = Pos;
+	else if (this.Selection.StartPos > DisplayPos)
+		this.Selection.StartPos = DisplayPos;
 
-	if (this.Selection.EndPos > Pos + Count)
+	if (this.Selection.EndPos > DisplayPos + Count)
 		this.Selection.EndPos -= Count;
-	if (this.Selection.EndPos > Pos)
-		this.Selection.EndPos = Pos;
+	if (this.Selection.EndPos > DisplayPos)
+		this.Selection.EndPos = DisplayPos;
 
-	if (this.CurPos.ContentPos > Pos + Count)
+	if (this.CurPos.ContentPos > DisplayPos + Count)
 		this.CurPos.ContentPos -= Count;
-	else if (this.CurPos.ContentPos > Pos)
-		this.CurPos.ContentPos = Pos;
+	else if (this.CurPos.ContentPos > DisplayPos)
+		this.CurPos.ContentPos = DisplayPos;
 
 	// Обновляем позиции в NearestPos
 	var NearPosLen = this.NearPosArray.length;
@@ -985,10 +994,10 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 		var ParaNearPos    = this.NearPosArray[Index];
 		var ParaContentPos = ParaNearPos.NearPos.ContentPos;
 
-		if (ParaContentPos.Data[0] > Pos + Count)
+		if (ParaContentPos.Data[0] > DisplayPos + Count)
 			ParaContentPos.Data[0] -= Count;
-		else if (ParaContentPos.Data[0] > Pos)
-			ParaContentPos.Data[0] = Math.max(0, Pos);
+		else if (ParaContentPos.Data[0] > DisplayPos)
+			ParaContentPos.Data[0] = Math.max(0, DisplayPos);
 	}
 
     if (DeletedItems.length) {
@@ -1001,6 +1010,8 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
         DeletedItems.forEach(function(Item) {
             this.DisplayContent.splice(Item.DisplayPos, 1)
         }.bind(this))
+        // so we can return it properly sorted for content insertion
+        DeletedItems.sort(function(a,b) { return a.Pos - b.Pos })
         this.UpdateContentIndexing()
     }
 
@@ -1012,7 +1023,9 @@ Paragraph.prototype.Internal_Content_Remove2 = function(Pos, Count)
 	}
 
 	// Передвинем все метки слов для проверки орфографии
-	this.SpellChecker.Update_OnRemove(this, Pos, Count);
+	this.SpellChecker.Update_OnRemove(this, DisplayPos, Count);
+
+    return DeletedItems
 };
 Paragraph.prototype.Clear_ContentChanges = function()
 {
@@ -11138,9 +11151,15 @@ Paragraph.prototype.Split = function(NewParagraph)
 	// Разделяем текущий элемент (возвращается правая, отделившаяся часть, если она null, тогда заменяем
 	// ее на пустой ран с заданными настройками).
     var OrigCurPos = this.GetOrigPos(CurPos)
-	var NewElement = this.Content[OrigCurPos].Split(ContentPos, 1);
+    if (this.isArabic && OrigCurPos > 0) --OrigCurPos
 
-	if (null === NewElement)
+	var NewElement
+
+    if (!this.isArabic) {
+        NewElement = this.Content[OrigCurPos].Split(ContentPos, 1);
+    }
+
+	if (!NewElement)
 	{
 		NewElement = new ParaRun(NewParagraph);
 		NewElement.Set_Pr(TextPr.Copy());
@@ -11152,19 +11171,18 @@ Paragraph.prototype.Split = function(NewParagraph)
 	// 3. Новый элемент, полученный после разделения элемента с номером CurPos, который мы
 	//    добавляем в начало нового параграфа.
 
-	var NewContent = this.Content.slice(OrigCurPos + 1);
-	this.Internal_Content_Remove2(CurPos + 1, this.Content.length - OrigCurPos - 1);
+	var NewContent = this.Internal_Content_Remove2(OrigCurPos + 1, this.Content.length - OrigCurPos - 1, true);
 
 	// В старый параграф добавим ран с концом параграфа
 	var EndRun = new ParaRun(this);
 	EndRun.Add_ToContent(0, new ParaEnd());
 
-	this.Internal_Content_Add(this.Content.length, EndRun);
+	this.Internal_Content_Add(this.Content.length, EndRun, true);
 
 	// Очищаем новый параграф и добавляем в него Right элемент и NewContent
-	NewParagraph.Internal_Content_Remove2(0, NewParagraph.Content.length);
+	NewParagraph.Internal_Content_Remove2(0, NewParagraph.Content.length, true);
 	NewParagraph.Internal_Content_Concat(NewContent);
-	NewParagraph.Internal_Content_Add(0, NewElement);
+	NewParagraph.Internal_Content_Add(0, NewElement, true);
 	NewParagraph.Correct_Content();
 
 	// Копируем все настройки в новый параграф. Делаем это после того как определили контент параграфов.
