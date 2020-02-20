@@ -16330,6 +16330,11 @@ Paragraph.prototype.GenerateDisplayContent = function() {
     			var Range = Line.Ranges[CurRange];
     			var StartPos = Range.StartPos;
     			var EndPos   = Range.EndPos;
+                var AddParaEnd = false
+                if (EndPos == this.Content.length - 1 && this.Content[EndPos].Content.length == 1 && this.Content[EndPos].Content[0].Type == para_End) {
+                    --EndPos
+                    AddParaEnd = true
+                }
 
                 var currentStack = []
                 var mainStack = []
@@ -16384,6 +16389,16 @@ Paragraph.prototype.GenerateDisplayContent = function() {
                         ++index
                     }.bind(this))
                 }.bind(this))
+
+                if (AddParaEnd) {
+                    ++EndPos
+                    var Item = this.Content[EndPos]
+                    this.DisplayContent[EndPos] = Item
+                    Item.LineNumber = CurLineNumber
+                    Item.Pos = EndPos
+                    Item.DisplayPos = EndPos
+                    Item.LinePos = EndPos > 0 ? this.DisplayContent[EndPos-1].LinePos+1 : 0
+                }
             }
         }
 
