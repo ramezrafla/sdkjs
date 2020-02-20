@@ -1711,7 +1711,7 @@ ParaRun.prototype.Recalculate_CurPos = function(X, Y, CurrentRun, _CurRange, _Cu
             var Item = this.private_CheckInstrText(this.DisplayContent[Pos]);
             var ItemType = Item.Type;
 
-            if (para_Drawing === ItemType && drawing_Inline !== Item.DrawingType)
+            if (para_End === ItemType || para_Drawing === ItemType && drawing_Inline !== Item.DrawingType)
                 continue;
 
             X += Item.Get_WidthVisible();
