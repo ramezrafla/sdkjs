@@ -7671,6 +7671,12 @@ ParaRun.prototype.Apply_TextPr = function(TextPr, IncFontSize, ApplyToAll)
         var Result = [];
         var LRun = this, CRun = null, RRun = null;
 
+        if (this.isArabic) {
+            this.State.Selection.Use = true
+            this.State.Selection.StartPos = 0
+            this.State.Selection.EndPos = this.Content.length
+        }
+
         if ( true === this.State.Selection.Use )
         {
             var StartPos = this.State.Selection.StartPos;
