@@ -654,7 +654,10 @@ ParaRun.prototype.Add = function(Item, bMath)
         {
             var CurOrigPos = this.GetOrigPos(this.State.ContentPos)
             var RightRun = this.Split2(CurOrigPos, this.GetParent(), this.Pos, true);
-            if (this.isArabic) RightRun.MoveCursorToEndPos()
+            if (this.isArabic) {
+                RightRun.MoveCursorToEndPos()
+                --RightRun.State.ContentPos
+            }
             else RightRun.MoveCursorToStartPos()
             RightRun.Make_ThisElementCurrent();
         }
@@ -6278,8 +6281,7 @@ ParaRun.prototype.MoveCursorToEndPos = function(SelectFromEnd)
 
         while ( CurPos > 0 )
         {
-            var type = this.DisplayContent[CurPos - 1].Type
-            if ( para_End === type || para_Space == type )
+            if ( para_End === this.DisplayContent[CurPos - 1].Type )
                 CurPos--;
             else
                 break;
