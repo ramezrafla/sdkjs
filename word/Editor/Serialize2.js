@@ -7336,7 +7336,7 @@ function BinaryFileReader(doc, openParams)
             while (true) {
                 var index = run.GetLastSpacePos()
                 if (index == -1) break
-                run.Split2(index, runParent, runPos);
+                run.Split2(index-1, runParent, runPos);
             }
         }
 
@@ -7681,7 +7681,7 @@ function BinaryFileReader(doc, openParams)
             while (true) {
                 var index = run.GetLastSpacePos()
                 if (index == -1) break
-                run.Split2(index, runParent, runPos);
+                run.Split2(index-1, runParent, runPos);
             }
         }
 

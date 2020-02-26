@@ -656,7 +656,7 @@ ParaRun.prototype.Add = function(Item, bMath)
             var RightRun = this.Split2(CurOrigPos, this.GetParent(), this.Pos, true);
             if (this.isArabic) {
                 RightRun.MoveCursorToEndPos()
-                --RightRun.State.ContentPos
+                if (RightRun.State.ContentPos) --RightRun.State.ContentPos
             }
             else RightRun.MoveCursorToStartPos()
             RightRun.Make_ThisElementCurrent();
@@ -1366,7 +1366,10 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition, bOrigPos)
     }
     else {
         OrigCurPos = this.GetOrigPos(Pos)
-        if (this.isArabic && this.isRendered) ++OrigCurPos
+        // we need to take into account character insertion at the beginning of the word
+        if (this.isArabic && this.isRendered && Pos < this.Content.length) {
+            ++OrigCurPos
+        }
     }
     History.Add(new CChangesRunAddItem(this, OrigCurPos, [Item], true));
     this.Content.splice( OrigCurPos, 0, Item );
@@ -6187,8 +6190,11 @@ ParaRun.prototype.Is_CursorPlaceable = function()
 
 ParaRun.prototype.Cursor_Is_Start = function()
 {
-    if ( this.State.ContentPos <= 0 )
+    if ( !this.isArabic && this.State.ContentPos <= 0 )
         return true;
+
+    if (this.isArabic && this.State.ContentPos >= this.Content.length)
+        return true
 
     return false;
 };
