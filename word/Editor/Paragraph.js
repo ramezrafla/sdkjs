@@ -1576,6 +1576,11 @@ Paragraph.prototype.Draw = function(CurPage, pGraphics)
 		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_PARAGRAPH);
 	}
 
+    // in case repainting moved our index
+    var CurItem = this.CurItem || this.CurPos.ContentPos >= 0 && this.CurPos.ContentPos < this.DisplayContent.length && this.DisplayContent[this.CurPos.ContentPos]
+
+    // unlike with Run's we cannot regenerate when we feel like it as the document may not have recalculated yet
+    // and that recalculation is expensive -- so we use UpdateContentIndexing as a quick fix
     this.GenerateDisplayContent()
 
 	var Pr = this.Get_CompiledPr();
@@ -1658,6 +1663,12 @@ Paragraph.prototype.Draw = function(CurPage, pGraphics)
 	{
 		pGraphics.End_Command();
 	}
+
+    if (CurItem) {
+        this.CurItem = null
+        this.CurPos.ContentPos = CurItem.DisplayPos
+        this.LogicDocument.private_UpdateCursorXY()
+    }
 
 };
 Paragraph.prototype.Internal_Draw_1 = function(CurPage, pGraphics, Pr)
@@ -16303,7 +16314,6 @@ Paragraph.prototype.UpdateContentIndexing = function() {
 }
 
 Paragraph.prototype.GenerateDisplayContent = function() {
-    var CurItem = this.CurItem || this.CurPos.ContentPos >= 0 && this.CurPos.ContentPos < this.DisplayContent.length && this.DisplayContent[this.CurPos.ContentPos]
     this.DisplayContent = []
     this.Content.forEach(function(Item, Pos) {
         delete Item.DisplayPos
@@ -16311,7 +16321,6 @@ Paragraph.prototype.GenerateDisplayContent = function() {
         delete Item.LinePos
         Item.Pos = Pos
     })
-    var CurLineNumber = -1
 
     this.Pages.forEach(function(Page) {
         if (Page.EndLine < 0)
@@ -16339,7 +16348,6 @@ Paragraph.prototype.GenerateDisplayContent = function() {
                 var currentStack = []
                 var mainStack = []
                 var isArabic = this.Content[StartPos].isArabic
-                ++CurLineNumber
 
                 this.isArabic =
                     (this.Content[0] && this.Content[0].isArabic) ||
@@ -16384,7 +16392,7 @@ Paragraph.prototype.GenerateDisplayContent = function() {
                         var DisplayPos = StartPos + index
                         this.DisplayContent[DisplayPos] = Item
                         Item.DisplayPos = DisplayPos
-                        Item.LineNumber = CurLineNumber
+                        Item.LineNumber = CurLine
                         Item.LinePos = index
                         ++index
                     }.bind(this))
@@ -16394,7 +16402,7 @@ Paragraph.prototype.GenerateDisplayContent = function() {
                     ++EndPos
                     var Item = this.Content[EndPos]
                     this.DisplayContent[EndPos] = Item
-                    Item.LineNumber = CurLineNumber
+                    Item.LineNumber = CurLine
                     Item.Pos = EndPos
                     Item.DisplayPos = EndPos
                     Item.LinePos = EndPos > 0 ? this.DisplayContent[EndPos-1].LinePos+1 : 0
@@ -16403,14 +16411,6 @@ Paragraph.prototype.GenerateDisplayContent = function() {
         }
 
     }.bind(this))
-
-    if (CurItem) {
-        this.CurItem = null
-        if (this.CurPos.ContentPos != CurItem.DisplayPos) {
-            this.CurPos.ContentPos = CurItem.DisplayPos
-            this.LogicDocument.private_UpdateCursorXY()
-        }
-    }
 }
 
 //--------------------------------------------------------export----------------------------------------------------

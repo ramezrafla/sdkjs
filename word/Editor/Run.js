@@ -171,8 +171,9 @@ ParaRun.prototype.GetOrigPos = function(Pos) {
 }
 ParaRun.prototype.GetDisplayPos = function(Pos) {
     if (!this.isArabic || !this.isRendered) return Pos
-    if (Pos >= this.Content.length) return 0
-    return this.Content[Pos].DisplayPos
+    var max = this.Content.length - 1
+    if (Pos >= max) return 0
+    return max - Pos
 }
 ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
     if (!this.isArabic || !this.isRendered) return [Pos1, Pos2]
@@ -651,11 +652,8 @@ ParaRun.prototype.Add = function(Item, bMath)
         // we split Runs along space boundaries to allow for RTL positioning
         if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 1)
         {
-            var CurPos = this.State.ContentPos;
-            var RightRun = this.Split2(CurPos);
-            var Parent = this.GetParent()
-            var RunPos = this.private_GetPosInParent(Parent);
-            Parent.Internal_Content_Add(RunPos+1, RightRun, true);
+            var CurOrigPos = this.GetOrigPos(this.State.ContentPos)
+            var RightRun = this.Split2(CurOrigPos, this.GetParent(), this.Pos, true);
             if (this.isArabic) RightRun.MoveCursorToEndPos()
             else RightRun.MoveCursorToStartPos()
             RightRun.Make_ThisElementCurrent();
@@ -1363,12 +1361,9 @@ ParaRun.prototype.Add_ToContent = function(Pos, Item, UpdatePosition, bOrigPos)
         OrigCurPos = Pos
         Pos = this.GetDisplayPos(OrigCurPos)
     }
-    else if (this.isArabic && this.isRendered) {
-        OrigCurPos = this.GetOrigPos(Pos)
-        if (OrigCurPos < this.DisplayContent.length) ++OrigCurPos
-    }
     else {
-        OrigCurPos = Pos
+        OrigCurPos = this.GetOrigPos(Pos)
+        if (this.isArabic && this.isRendered) ++OrigCurPos
     }
     History.Add(new CChangesRunAddItem(this, OrigCurPos, [Item], true));
     this.Content.splice( OrigCurPos, 0, Item );
@@ -2041,12 +2036,15 @@ ParaRun.prototype.Split = function (ContentPos, Depth)
     return this.Split2( CurPos );
 };
 
-ParaRun.prototype.Split2 = function(CurPos, Parent, ParentPos)
+ParaRun.prototype.Split2 = function(CurPos, Parent, ParentPos, bOrigPos)
 {
     var OrigCurPos
-    if (this.isArabic && this.isRendered) {
-        if (CurPos == this.Content.length) OrigCurPos = 0
-        else OrigCurPos = this.GetOrigPos(CurPos) + 1
+    if (bOrigPos) {
+        OrigCurPos = CurPos
+        CurPos = this.GetDisplayPos(OrigCurPos)
+    }
+    else if (this.isArabic && this.isRendered) {
+        OrigCurPos = this.GetOrigPos(CurPos)
     }
     else {
         OrigCurPos = CurPos
@@ -6280,7 +6278,8 @@ ParaRun.prototype.MoveCursorToEndPos = function(SelectFromEnd)
 
         while ( CurPos > 0 )
         {
-            if ( para_End === this.DisplayContent[CurPos - 1].Type )
+            var type = this.DisplayContent[CurPos - 1].Type
+            if ( para_End === type || para_Space == type )
                 CurPos--;
             else
                 break;
