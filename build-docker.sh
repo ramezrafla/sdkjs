@@ -1,7 +1,7 @@
 #!/bin/bash
 CONTAINER=onlyoffice-document-server
 cd build
-grunt --level=WHITESPACE_ONLY --formatting=PRETTY_PRINT
+grunt --level=WHITESPACE_ONLY --noclosure=true --formatting=PRETTY_PRINT
 cd ../deploy/sdkjs/
 sudo docker cp word/sdk-all.js $CONTAINER:/var/www/onlyoffice/documentserver/sdkjs/word
 sudo docker cp word/sdk-all-min.js $CONTAINER:/var/www/onlyoffice/documentserver/sdkjs/word

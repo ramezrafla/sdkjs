@@ -16022,7 +16022,7 @@ function CParagraphStartState(Paragraph)
     this.TextPr = Paragraph.TextPr;
     this.Content = Paragraph.Content.slice()
     this.DisplayContent = this.Content.slice()
-    this.UpdateContentIndexing()
+    this.UpdateContentIndexing && this.UpdateContentIndexing()
 }
 
 function CParagraphTabsCounter()
