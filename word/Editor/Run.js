@@ -183,22 +183,24 @@ ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
     return [OrigPos2, Math.min(OrigPos1, this.Content.length)]
 }
 ParaRun.prototype.HasSpaces = function() {
-  var spacesCount = 0
-  var Pos = 1
-  while (Pos < this.Content.length-1 && spacesCount == 0) {
-    if (this.Content[Pos].Type == para_Space) return true
-    ++Pos
-  }
-  return false
+    if (this.IsAllSpaces()) return false
+    var Pos = 1
+    var max = this.Content.length-1
+    while (Pos < max) {
+        if (this.Content[Pos].Type == para_Space) return true
+        ++Pos
+    }
+    return false
 };
 ParaRun.prototype.GetLastSpacePos = function() {
-  var Pos = this.Content.length - 2;
-  while (Pos > 0) {
-    if (this.Content[Pos].Type == para_Space) return Pos
-    --Pos
-  }
-  return -1
-}
+    if (this.IsAllSpaces()) return -1
+    var Pos = this.Content.length - 2;
+    while (Pos > 0) {
+        if (this.Content[Pos].Type == para_Space) return Pos
+        --Pos
+    }
+    return -1
+    }
 ParaRun.prototype.Set_ParaMath = function(ParaMath, Parent)
 {
     this.ParaMath = ParaMath;
@@ -650,13 +652,13 @@ ParaRun.prototype.Add = function(Item, bMath)
 	{
 		this.private_AddItemToRun(this.State.ContentPos, Item);
         // we split Runs along space boundaries to allow for RTL positioning
-        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 1)
+        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 1 && !this.IsAllSpaces())
         {
             var CurOrigPos = this.GetOrigPos(this.State.ContentPos)
             var RightRun = this.Split2(CurOrigPos, this.GetParent(), this.Pos, true);
             if (this.isArabic) {
                 RightRun.MoveCursorToEndPos()
-                if (RightRun.State.ContentPos) --RightRun.State.ContentPos
+                RightRun.State.ContentPos = RightRun.Content.length -1 
             }
             else RightRun.MoveCursorToStartPos()
             RightRun.Make_ThisElementCurrent();
@@ -11635,6 +11637,17 @@ CReviewInfo.prototype.IsMovedFrom = function()
 {
 	return this.MoveType === Asc.c_oAscRevisionsMove.MoveFrom;
 };
+
+ParaRun.prototype.IsAllSpaces = function() {
+    var len = this.Content.length
+    if (len == 0) return false
+    var Pos = 0
+    while (Pos < len) {
+        if (this.Content[Pos].Type != para_Space) return false
+        ++Pos
+    }
+    return true
+}
 
 // https://www.key-shortcut.com/en/writing-systems/%EF%BA%95%EF%BA%8F%D8%A2-arabic-alphabet
 // https://github.com/mapmeld/circular-arabic/blob/gh-pages/circular-arabic.js
