@@ -4243,7 +4243,7 @@ Paragraph.prototype.Correct_ContentPos = function(CorrectEndLinePos)
 		while (_CurPos < Count && true === this.DisplayContent[_CurPos].Is_Empty({SkipAnchor : true}))
 			_CurPos++;
 
-		if (_CurPos < Count && true === this.DisplayContent[_CurPos].IsStartFromNewLine())
+		if (_CurPos < Count && (true === this.DisplayContent[_CurPos].IsStartFromNewLine() || this.DisplayContent[_CurPos].isArabic))
 		{
 			CurPos = _CurPos;
 			this.DisplayContent[CurPos].MoveCursorToStartPos();

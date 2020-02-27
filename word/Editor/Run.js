@@ -183,7 +183,6 @@ ParaRun.prototype.GetOrigRange = function(Pos1,Pos2) {
     return [OrigPos2, Math.min(OrigPos1, this.Content.length)]
 }
 ParaRun.prototype.HasSpaces = function() {
-    if (this.IsAllSpaces()) return false
     var Pos = 1
     var max = this.Content.length-1
     while (Pos < max) {
@@ -193,7 +192,6 @@ ParaRun.prototype.HasSpaces = function() {
     return false
 };
 ParaRun.prototype.GetLastSpacePos = function() {
-    if (this.IsAllSpaces()) return -1
     var Pos = this.Content.length - 2;
     while (Pos > 0) {
         if (this.Content[Pos].Type == para_Space) return Pos
@@ -652,14 +650,11 @@ ParaRun.prototype.Add = function(Item, bMath)
 	{
 		this.private_AddItemToRun(this.State.ContentPos, Item);
         // we split Runs along space boundaries to allow for RTL positioning
-        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 1 && !this.IsAllSpaces())
+        if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 1)
         {
-            var CurOrigPos = this.GetOrigPos(this.State.ContentPos)
+            var CurOrigPos = this.GetOrigPos(this.State.ContentPos)+1
             var RightRun = this.Split2(CurOrigPos, this.GetParent(), this.Pos, true);
-            if (this.isArabic) {
-                RightRun.MoveCursorToEndPos()
-                RightRun.State.ContentPos = RightRun.Content.length -1 
-            }
+            if (this.isArabic) RightRun.MoveCursorToEndPos()
             else RightRun.MoveCursorToStartPos()
             RightRun.Make_ThisElementCurrent();
         }
