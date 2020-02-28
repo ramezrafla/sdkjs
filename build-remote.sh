@@ -4,7 +4,7 @@ SERVER=ubuntu@server.office2.io:/var/www/onlyoffice/documentserver/
 export PRODUCT_VERSION="15.2.0"
 export BUILD_NUMBER="111"
 cd build
-grunt
+grunt --level=ADVANCED
 cd ..
 cd deploy/
 scp -i $KEY -r sdkjs $SERVER

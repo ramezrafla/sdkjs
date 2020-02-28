@@ -1667,7 +1667,8 @@ Paragraph.prototype.Draw = function(CurPage, pGraphics)
     if (CurItem) {
         this.CurItem = null
         this.CurPos.ContentPos = CurItem.DisplayPos
-        this.LogicDocument.private_UpdateCursorXY()
+        // to support spreadsheet
+        this.LogicDocument && this.LogicDocument.private_UpdateCursorXY && this.LogicDocument.private_UpdateCursorXY()
     }
 
 };
