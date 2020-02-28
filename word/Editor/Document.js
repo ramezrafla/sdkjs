@@ -14791,13 +14791,15 @@ CDocument.prototype.controller_MoveCursorLeft = function(AddToSelect, Word)
 		return false;
 
 	this.RemoveNumberingSelection();
+    var isArabic = this.Content[this.CurPos.ContentPos].isArabic
+
 	if (true === this.Selection.Use)
 	{
 		if (true === AddToSelect)
 		{
 			if (false === this.Content[this.Selection.EndPos].MoveCursorLeft(true, Word))
 			{
-				if (0 !== this.Selection.EndPos)
+				if (!isArabic && 0 !== this.Selection.EndPos)
 				{
 					this.Selection.EndPos--;
 					this.CurPos.ContentPos = this.Selection.EndPos;
@@ -14805,6 +14807,13 @@ CDocument.prototype.controller_MoveCursorLeft = function(AddToSelect, Word)
 					var Item = this.Content[this.Selection.EndPos];
 					Item.MoveCursorLeftWithSelectionFromEnd(Word);
 				}
+                else if (isArabic && this.Selection.EndPos != this.Content.length - 1) {
+                    this.Selection.EndPos++;
+					this.CurPos.ContentPos = this.Selection.EndPos;
+
+					var Item = this.Content[this.Selection.EndPos];
+					Item.MoveCursorLeftWithSelectionFromEnd(Word);
+                }
 			}
 
 			// Проверяем не обнулился ли селект в последнем элементе. Такое могло быть, если была
@@ -14833,11 +14842,15 @@ CDocument.prototype.controller_MoveCursorLeft = function(AddToSelect, Word)
 			this.CurPos.ContentPos = Start;
 			if (false === this.Content[this.CurPos.ContentPos].MoveCursorLeft(false, Word))
 			{
-				if (this.CurPos.ContentPos > 0)
+				if (!isArabic && this.CurPos.ContentPos > 0)
 				{
 					this.CurPos.ContentPos--;
 					this.Content[this.CurPos.ContentPos].MoveCursorToEndPos(false, false);
 				}
+                else if (isArabic && this.CurPos.ContentPos < this.Content.length -1) {
+                    this.CurPos.ContentPos++;
+					this.Content[this.CurPos.ContentPos].MoveCursorToEndPos(false, false);
+                }
 			}
 
 			this.RemoveSelection();
@@ -14854,7 +14867,7 @@ CDocument.prototype.controller_MoveCursorLeft = function(AddToSelect, Word)
 			if (false === this.Content[this.CurPos.ContentPos].MoveCursorLeft(true, Word))
 			{
 				// Нужно перейти в конец предыдущего элемент
-				if (0 != this.CurPos.ContentPos)
+				if (!isArabic && 0 != this.CurPos.ContentPos)
 				{
 					this.CurPos.ContentPos--;
 					this.Selection.EndPos = this.CurPos.ContentPos;
@@ -14862,6 +14875,12 @@ CDocument.prototype.controller_MoveCursorLeft = function(AddToSelect, Word)
 					var Item = this.Content[this.CurPos.ContentPos];
 					Item.MoveCursorLeftWithSelectionFromEnd(Word);
 				}
+                else if (isArabic && this.Content.length - 1 != this.CurPos.ContentPos) {
+                    this.CurPos.ContentPos++;
+					this.Selection.EndPos = this.CurPos.ContentPos;
+
+					var Item = this.Content[this.CurPos.ContentPos];
+					Item.MoveCursorLeftWithSelectionFromEnd(Word);                }
 			}
 
 			// Проверяем не обнулился ли селект (т.е. ничего не заселекчено)
@@ -14876,11 +14895,15 @@ CDocument.prototype.controller_MoveCursorLeft = function(AddToSelect, Word)
 			if (false === this.Content[this.CurPos.ContentPos].MoveCursorLeft(false, Word))
 			{
 				// Нужно перейти в конец предыдущего элемент
-				if (0 != this.CurPos.ContentPos)
+				if (!isArabic && 0 != this.CurPos.ContentPos)
 				{
 					this.CurPos.ContentPos--;
 					this.Content[this.CurPos.ContentPos].MoveCursorToEndPos(false, false);
 				}
+                else if (isArabic && this.Content.length - 1 != this.CurPos.ContentPos) {
+                    this.CurPos.ContentPos++;
+					this.Content[this.CurPos.ContentPos].MoveCursorToEndPos(false, false);
+                }
 			}
 		}
 	}
@@ -14891,6 +14914,8 @@ CDocument.prototype.controller_MoveCursorRight = function(AddToSelect, Word)
 		return false;
 
 	this.RemoveNumberingSelection();
+    var isArabic = this.Content[this.CurPos.ContentPos].isArabic
+
 	if (true === this.Selection.Use)
 	{
 		if (true === AddToSelect)
@@ -14899,7 +14924,7 @@ CDocument.prototype.controller_MoveCursorRight = function(AddToSelect, Word)
 			if (false === this.Content[this.Selection.EndPos].MoveCursorRight(true, Word))
 			{
 				// Нужно перейти в начало следующего элемента
-				if (this.Content.length - 1 != this.Selection.EndPos)
+				if (!isArabic && this.Content.length - 1 != this.Selection.EndPos)
 				{
 					this.Selection.EndPos++;
 					this.CurPos.ContentPos = this.Selection.EndPos;
@@ -14907,6 +14932,14 @@ CDocument.prototype.controller_MoveCursorRight = function(AddToSelect, Word)
 					var Item = this.Content[this.Selection.EndPos];
 					Item.MoveCursorRightWithSelectionFromStart(Word);
 				}
+                else if (isArabic && this.Selection.EndPos > 0) {
+                    this.Selection.EndPos--;
+                    this.CurPos.ContentPos = this.Selection.EndPos;
+
+                    var Item = this.Content[this.Selection.EndPos];
+                    Item.MoveCursorRightWithSelectionFromStart(Word);
+                }
+
 			}
 
 			// Проверяем не обнулился ли селект в последнем параграфе. Такое могло быть, если была
@@ -14914,7 +14947,8 @@ CDocument.prototype.controller_MoveCursorRight = function(AddToSelect, Word)
 			if (this.Selection.EndPos != this.Selection.StartPos && false === this.Content[this.Selection.EndPos].IsSelectionUse())
 			{
 				// Такая ситуация возможна только при обратном селекте (снизу вверх), поэтому вычитаем
-				this.Selection.EndPos++;
+				if (isArabic) this.Selection.EndPos--;
+                else this.Selection.EndPos++;
 				this.CurPos.ContentPos = this.Selection.EndPos;
 			}
 
@@ -14957,15 +14991,22 @@ CDocument.prototype.controller_MoveCursorRight = function(AddToSelect, Word)
 
 			if (false === this.Content[this.CurPos.ContentPos].MoveCursorRight(true, Word))
 			{
-				// Нужно перейти в конец предыдущего элемента
-				if (this.Content.length - 1 != this.CurPos.ContentPos)
-				{
-					this.CurPos.ContentPos++;
+
+                if (!isArabic && this.Content.length - 1 != this.CurPos.ContentPos)
+                {
+                    this.CurPos.ContentPos++;
 					this.Selection.EndPos = this.CurPos.ContentPos;
 
 					var Item = this.Content[this.CurPos.ContentPos];
 					Item.MoveCursorRightWithSelectionFromStart(Word);
-				}
+                }
+                else if (isArabic && this.CurPos.ContentPos > 0) {
+                    this.CurPos.ContentPos--
+                    this.Selection.EndPos = this.CurPos.ContentPos;
+
+					var Item = this.Content[this.CurPos.ContentPos];
+					Item.MoveCursorRightWithSelectionFromStart(Word);
+                }
 			}
 
 			// Проверяем не обнулился ли селект (т.е. ничего не заселекчено)
@@ -14980,11 +15021,15 @@ CDocument.prototype.controller_MoveCursorRight = function(AddToSelect, Word)
 			if (false === this.Content[this.CurPos.ContentPos].MoveCursorRight(false, Word))
 			{
 				// Нужно перейти в начало следующего элемента
-				if (this.Content.length - 1 != this.CurPos.ContentPos)
+				if (!isArabic && this.Content.length - 1 != this.CurPos.ContentPos)
 				{
-					this.CurPos.ContentPos++;
+				    this.CurPos.ContentPos++;
 					this.Content[this.CurPos.ContentPos].MoveCursorToStartPos(false);
 				}
+                else if (isArabic && this.CurPos.ContentPos > 0) {
+                    this.CurPos.ContentPos--
+                    this.Content[this.CurPos.ContentPos].MoveCursorToStartPos(false);
+                }
 			}
 		}
 	}

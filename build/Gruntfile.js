@@ -230,8 +230,8 @@ module.exports = function(grunt) {
 		});
 	});
 	grunt.registerTask('license', 'Add license', function () {
-		const appCopyright = "Copyright (C) Ascensio System SIA 2012-" + grunt.template.today('yyyy') +". All rights reserved";
-		const publisherUrl = "https://www.onlyoffice.com/";
+        const appCopyright = "Copyright (C) ZeGenie Inc. 2010-" + grunt.template.today('yyyy') +". All rights reserved";
+		const publisherUrl = "https://www.zegenie.com/";
 		var cache = '*.cache';
 		var fonts = '../common/libfont/';
 		var word = '../word/';
