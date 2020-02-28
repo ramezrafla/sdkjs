@@ -16330,6 +16330,12 @@ Paragraph.prototype.GenerateDisplayContent = function() {
         var StartLine = Page.StartLine;
     	var EndLine   = Page.EndLine;
 
+        this.isArabic =
+            (this.Content[0] && this.Content[0].isArabic) ||
+            (this.Content[1] && this.Content[1].isArabic) ||
+            (this.Content[2] && this.Content[2].isArabic) ||
+            (this.Content[3] && this.Content[3].isArabic)
+
     	for (var CurLine = StartLine; CurLine <= EndLine; CurLine++)
     	{
     		var Line        = this.Lines[CurLine];
@@ -16350,12 +16356,6 @@ Paragraph.prototype.GenerateDisplayContent = function() {
                 var mainStack = []
                 var isArabic = this.Content[StartPos].isArabic
 
-                this.isArabic =
-                    (this.Content[0] && this.Content[0].isArabic) ||
-                    (this.Content[1] && this.Content[1].isArabic) ||
-                    (this.Content[2] && this.Content[2].isArabic) ||
-                    (this.Content[3] && this.Content[3].isArabic)
-
                 for (var Pos = StartPos; Pos <= EndPos; Pos++) {
                     var Item = this.Content[Pos];
                     Item.Pos = Pos
@@ -16368,6 +16368,7 @@ Paragraph.prototype.GenerateDisplayContent = function() {
                         for (var i = DisplayPos; i < this.DisplayContent.length; i++) this.DisplayContent[i].DisplayPos = i
                     }
                     var curIsArabic = Item.isArabic === true
+                    if (!curIsArabic && isArabic && Item.Type == para_Run && Item.IsAllSpaces()) curIsArabic = true
                     if (curIsArabic === isArabic) {
                         if (isArabic) currentStack.unshift(Item)
                         else currentStack.push(Item)
