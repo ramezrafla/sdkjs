@@ -16317,7 +16317,7 @@ Paragraph.prototype.GetNextArabicWord = function(Pos) {
     var NextItem
     if (Pos) {
         var NewPos = Pos - 1
-        while (this.DisplayContent[NewPos].IsEmpty()) --NewPos
+        while (this.DisplayContent[NewPos] && this.DisplayContent[NewPos].IsEmpty()) --NewPos
         NextItem = this.DisplayContent[NewPos]
         if (NextItem.LineNumber == curLine) return NextItem
     }
@@ -16337,8 +16337,8 @@ Paragraph.prototype.GetPrevArabicWord = function(Pos) {
     var len = this.DisplayContent.length
     var Item = this.DisplayContent[Pos]
     var curLine = Item.LineNumber
-    var NewPos = Pos+1
-    while (this.DisplayContent[NewPos].IsEmpty()) ++NewPos
+    var NewPos = Pos + 1
+    while (this.DisplayContent[NewPos] && this.DisplayContent[NewPos].IsEmpty()) ++NewPos
     var PrevItem = this.DisplayContent[NewPos]
     if (PrevItem && PrevItem.LineNumber == curLine) return PrevItem
     // move to previous line
@@ -16355,7 +16355,7 @@ Paragraph.prototype.GetPrevArabicWord = function(Pos) {
 
 Paragraph.prototype.GetFirstArabicWordPos = function() {
     var EndPos = this.Lines[0].Ranges[0].EndPos
-    while (this.DisplayContent[EndPos] && this.DisplayContent[EndPos].LineNumber != 0) --EndPos
+    while (EndPos && this.DisplayContent[EndPos] && this.DisplayContent[EndPos].LineNumber != 0) --EndPos
     return EndPos
 }
 
@@ -16363,7 +16363,7 @@ Paragraph.prototype.GetLastArabicWordPos = function() {
     var lastLine = this.Lines[this.Lines.length-1]
     var lastRange = lastLine.Ranges[lastLine.Ranges.length -1]
     var Pos = lastRange.StartPos
-    if (Pos > 0) {
+    if (Pos >= 0) {
         var Item = this.DisplayContent[Pos]
         return Item && Item.IsParaEndRun() ? Pos - 1 : Pos
     }
