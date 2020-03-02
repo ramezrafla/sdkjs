@@ -16319,7 +16319,7 @@ Paragraph.prototype.GetNextArabicWord = function(Pos) {
         var NewPos = Pos - 1
         while (this.DisplayContent[NewPos] && this.DisplayContent[NewPos].IsEmpty()) --NewPos
         NextItem = this.DisplayContent[NewPos]
-        if (NextItem.LineNumber == curLine) return NextItem
+        if (NextItem && NextItem.LineNumber == curLine) return NextItem
     }
     // move to next line
     var DisplayPos = Pos+1

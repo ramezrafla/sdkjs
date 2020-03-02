@@ -1138,7 +1138,7 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
     if (this.isArabic && this.State.ContentPos == this.Content.length && this.Content[0].Type == para_Text) {
         var Parent = this.GetParent()
         var PrevRun = Parent.GetPrevArabicWord(this.DisplayPos)
-        if (PrevRun && PrevRun.Content.length == 1 && PrevRun.Content[0].Type == para_Space) PrevRun = GetPrevArabicWord.GetPrevWord(PrevRun.DisplayPos)
+        if (PrevRun && PrevRun.Content.length == 1 && PrevRun.Content[0].Type == para_Space) PrevRun = Parent.GetPrevArabicWord(PrevRun.DisplayPos)
         if (PrevRun && PrevRun.Content.length && PrevRun.Content[PrevRun.Content.length-1].Type == para_Text && PrevRun.isArabic) {
             PrevRun.Content.slice().reverse().forEach(function(Item) {
                 this.Add_ToContent(0, Item, false, true)
