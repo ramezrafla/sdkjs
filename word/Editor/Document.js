@@ -14902,7 +14902,7 @@ CDocument.prototype.controller_MoveCursorLeft = function(AddToSelect, Word)
 				}
                 else if (isArabic && this.Content.length - 1 != this.CurPos.ContentPos) {
                     this.CurPos.ContentPos++;
-					this.Content[this.CurPos.ContentPos].MoveCursorToEndPos(false, false);
+					this.Content[this.CurPos.ContentPos].MoveCursorToStartPos(false, false);
                 }
 			}
 		}
@@ -15028,7 +15028,7 @@ CDocument.prototype.controller_MoveCursorRight = function(AddToSelect, Word)
 				}
                 else if (isArabic && this.CurPos.ContentPos > 0) {
                     this.CurPos.ContentPos--
-                    this.Content[this.CurPos.ContentPos].MoveCursorToStartPos(false);
+                    this.Content[this.CurPos.ContentPos].MoveCursorToEndPos(false);
                 }
 			}
 		}

@@ -1137,8 +1137,8 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
     /// now we merge with next Run if we have no spaces and are at the end
     if (this.isArabic && this.State.ContentPos == this.Content.length && this.Content[0].Type == para_Text) {
         var Parent = this.GetParent()
-        var PrevRun = Parent.GetPrevWord(this)
-        if (PrevRun && PrevRun.Content.length == 1 && PrevRun.Content[0].Type == para_Space) PrevRun = Parent.GetPrevWord(PrevRun)
+        var PrevRun = Parent.GetPrevArabicWord(this.DisplayPos)
+        if (PrevRun && PrevRun.Content.length == 1 && PrevRun.Content[0].Type == para_Space) PrevRun = GetPrevArabicWord.GetPrevWord(PrevRun.DisplayPos)
         if (PrevRun && PrevRun.Content.length && PrevRun.Content[PrevRun.Content.length-1].Type == para_Text && PrevRun.isArabic) {
             PrevRun.Content.slice().reverse().forEach(function(Item) {
                 this.Add_ToContent(0, Item, false, true)
@@ -1149,8 +1149,8 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
     }
     else if (this.isArabic && this.State.ContentPos == 0 && this.Content.length && this.Content[this.Content.length-1].Type == para_Text) {
         var Parent = this.GetParent()
-        var NextRun = Parent.GetNextWord(this)
-        if (NextRun && NextRun.Content.length == 1 && NextRun.Content[0].Type == para_Space) NextRun = Parent.GetNextWord(NextRun)
+        var NextRun = Parent.GetNextArabicWord(this.DisplayPos)
+        if (NextRun && NextRun.Content.length == 1 && NextRun.Content[0].Type == para_Space) NextRun = Parent.GetNextArabicWord(NextRun.DisplayPos)
         if (NextRun && NextRun.Content.length && NextRun.Content[0].Type == para_Text && NextRun.isArabic) {
             NextRun.Content.forEach(function(Item) {
                 this.Add_ToContent(this.Content.length, Item, false, true)

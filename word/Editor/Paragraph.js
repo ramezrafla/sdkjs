@@ -4238,24 +4238,33 @@ Paragraph.prototype.Correct_ContentPos = function(CorrectEndLinePos)
 	// Если курсор попадает на конец строки, тогда мы его переносим в начало следующей
 	if (true === CorrectEndLinePos && true === this.DisplayContent[CurPos].Cursor_Is_End())
 	{
-		var _CurPos = CurPos + 1;
+        var _CurPos
+        if (this.DisplayContent[CurPos].isArabic) {
+            var PrevRun = this.GetPrevArabicWord(CurPos)
+            if (PrevRun) _CurPos = PrevRun.DisplayPos;
+        }
+        else {
+            _CurPos = CurPos + 1;
 
-		// Пропускаем пустые раны
-		while (_CurPos < Count && true === this.DisplayContent[_CurPos].Is_Empty({SkipAnchor : true}))
-			_CurPos++;
+    		// Пропускаем пустые раны
+    		while (_CurPos < Count && true === this.DisplayContent[_CurPos].Is_Empty({SkipAnchor : true}))
+    			_CurPos++;
+        }
 
-		if (_CurPos < Count && (true === this.DisplayContent[_CurPos].IsStartFromNewLine() || this.DisplayContent[_CurPos].isArabic))
+		if (_CurPos && _CurPos < Count && (true === this.DisplayContent[_CurPos].IsStartFromNewLine() || this.DisplayContent[_CurPos].isArabic))
 		{
 			CurPos = _CurPos;
 			this.DisplayContent[CurPos].MoveCursorToStartPos();
 		}
 	}
 
-	while (CurPos > 0 && true === this.DisplayContent[CurPos].Cursor_Is_NeededCorrectPos() && para_Run === this.DisplayContent[CurPos - 1].Type && !this.DisplayContent[CurPos -1].IsSolid())
-	{
-		CurPos--;
-		this.DisplayContent[CurPos].MoveCursorToEndPos();
-	}
+    if (!this.isArabic) {
+    	while (CurPos > 0 && true === this.DisplayContent[CurPos].Cursor_Is_NeededCorrectPos() && para_Run === this.DisplayContent[CurPos - 1].Type && !this.DisplayContent[CurPos -1].IsSolid())
+    	{
+            CurPos--;
+    		this.DisplayContent[CurPos].MoveCursorToEndPos();
+    	}
+    }
 
 	this.CurPos.ContentPos = CurPos;
 };
@@ -5037,6 +5046,19 @@ Paragraph.prototype.Get_LeftPos = function(SearchPos, ContentPos)
 	if (true === SearchPos.Found)
 		return true;
 
+    // if we are here it means we failed to move to the left within the same run
+    if (this.isArabic) {
+        var NextRun = this.GetNextArabicWord(CurPos)
+        if (NextRun) {
+            // При выходе из формулы встаем в конец рана
+            SearchPos.Pos.Update(NextRun.DisplayContent.length-1, Depth+1);
+            SearchPos.Pos.Update(NextRun.DisplayPos, Depth);
+            SearchPos.Found = true;
+            return true;
+        }
+        return false
+    }
+
 	CurPos--;
 
 	if (CurPos >= 0 && this.DisplayContent[CurPos + 1].IsStopCursorOnEntryExit())
@@ -5089,9 +5111,23 @@ Paragraph.prototype.Get_RightPos = function(SearchPos, ContentPos, StepEnd)
 		}
 	}
 
+    // if we are here it means we failed to move to the right within the same run
+    var Count = this.DisplayContent.length;
+
+    if (this.isArabic) {
+        var PrevRun = this.GetPrevArabicWord(CurPos)
+        if (PrevRun) {
+            // При выходе из формулы встаем в конец рана
+            SearchPos.Pos.Update(0, Depth + 1);
+            SearchPos.Pos.Update(PrevRun.DisplayPos, Depth);
+            SearchPos.Found = true;
+            return true;
+        }
+        return false
+    }
+
 	CurPos++;
 
-	var Count = this.DisplayContent.length;
 	if (CurPos < Count && this.DisplayContent[CurPos - 1].IsStopCursorOnEntryExit())
 	{
 		// При выходе из формулы встаем в конец рана
@@ -5755,11 +5791,12 @@ Paragraph.prototype.MoveCursorToStartPos = function(AddToSelect)
 	else
 	{
 		this.RemoveSelection();
-
-		this.CurPos.ContentPos = 0;
+        var StartPos = this.isArabic ? this.GetFirstArabicWordPos() : 0
+		this.CurPos.ContentPos = StartPos;
 		this.CurPos.Line       = -1;
 		this.CurPos.Range      = -1;
-		this.DisplayContent[0].MoveCursorToStartPos();
+		if (this.isArabic) this.DisplayContent[StartPos].MoveCursorToEndPos();
+        else this.DisplayContent[StartPos].MoveCursorToStartPos();
 		this.Correct_ContentPos(false);
 		this.Correct_ContentPos2();
 	}
@@ -5786,26 +5823,28 @@ Paragraph.prototype.MoveCursorToEndPos = function(AddToSelect, StartSelectFromEn
 	}
 	else
 	{
+        var EndPos = this.isArabic ? this.GetLastArabicWordPos() : this.DisplayContent.length - 1
 		if (true === StartSelectFromEnd)
 		{
 			this.Selection.Use   = true;
 			this.Selection.Start = false;
 
-			this.Selection.StartPos = this.DisplayContent.length - 1;
-			this.Selection.EndPos   = this.DisplayContent.length - 1;
+			this.Selection.StartPos = EndPos;
+			this.Selection.EndPos   = EndPos;
 
-			this.CurPos.ContentPos = this.DisplayContent.length - 1;
+			this.CurPos.ContentPos = EndPos;
 
-			this.DisplayContent[this.CurPos.ContentPos].MoveCursorToEndPos(true);
+			this.DisplayContent[EndPos].MoveCursorToEndPos(true);
 		}
 		else
 		{
 			this.RemoveSelection();
 
-			this.CurPos.ContentPos = this.DisplayContent.length - 1;
+			this.CurPos.ContentPos = EndPos;
 			this.CurPos.Line       = -1;
 			this.CurPos.Range      = -1;
-			this.DisplayContent[this.CurPos.ContentPos].MoveCursorToEndPos();
+			if (this.isArabic) this.DisplayContent[EndPos].MoveCursorToStartPos();
+            else this.DisplayContent[EndPos].MoveCursorToEndPos();
 			this.Correct_ContentPos(false);
 			this.Correct_ContentPos2();
 		}
@@ -16271,42 +16310,64 @@ Paragraph.prototype.DebugDisplayContent = function() {
     console.log(this.DisplayContent.map(function(Item) { return Item.string + '[' + Item.DisplayPos + ',' + Item.Pos }))
 }
 
-Paragraph.prototype.GetNextWord = function(Item) {
-    if (!this.isArabic) return this.Content[Item.Pos+1]
+Paragraph.prototype.GetNextArabicWord = function(Pos) {
     var len = this.DisplayContent.length
+    var Item = this.DisplayContent[Pos]
     var curLine = Item.LineNumber
     var NextItem
-    if (Item.DisplayPos) {
-        NextItem = this.DisplayContent[Item.DisplayPos-1]
+    if (Pos) {
+        var NewPos = Pos - 1
+        while (this.DisplayContent[NewPos].IsEmpty()) --NewPos
+        NextItem = this.DisplayContent[NewPos]
         if (NextItem.LineNumber == curLine) return NextItem
     }
     // move to next line
-    var DisplayPos = Item.DisplayPos+1
+    var DisplayPos = Pos+1
     while (DisplayPos < len && this.DisplayContent[DisplayPos].LineNumber == curLine) ++DisplayPos
     if (DisplayPos == len) return null
     // we are now at the next line
     ++curLine
     while (DisplayPos < len && this.DisplayContent[DisplayPos].LineNumber == curLine) ++DisplayPos
-    return this.DisplayContent[DisplayPos-1]
+    --DisplayPos
+    while (DisplayPos > 0 && this.DisplayContent[DisplayPos].IsEmpty()) --DisplayPos
+    return this.DisplayContent[DisplayPos]
 }
 
-Paragraph.prototype.GetPrevWord = function(Item) {
-    if (!this.isArabic) {
-        if (Item.Pos == 0) return null
-        return this.Content[Item.Pos-1]
-    }
+Paragraph.prototype.GetPrevArabicWord = function(Pos) {
     var len = this.DisplayContent.length
+    var Item = this.DisplayContent[Pos]
     var curLine = Item.LineNumber
-    var PrevItem = this.DisplayContent[Item.DisplayPos+1]
+    var NewPos = Pos+1
+    while (this.DisplayContent[NewPos].IsEmpty()) ++NewPos
+    var PrevItem = this.DisplayContent[NewPos]
     if (PrevItem && PrevItem.LineNumber == curLine) return PrevItem
     // move to previous line
-    var DisplayPos = Item.DisplayPos-1
+    var DisplayPos = Pos-1
     while (DisplayPos >= 0 && this.DisplayContent[DisplayPos].LineNumber == curLine) --DisplayPos
     if (DisplayPos == -1) return null
     // we are now at the previous line
     --curLine
     while (DisplayPos >= 0 && this.DisplayContent[DisplayPos].LineNumber == curLine) --DisplayPos
-    return this.DisplayContent[DisplayPos+1]
+    ++DisplayPos
+    while (DisplayPos < len && this.DisplayContent[DisplayPos].IsEmpty()) ++DisplayPos
+    return this.DisplayContent[DisplayPos]
+}
+
+Paragraph.prototype.GetFirstArabicWordPos = function() {
+    var EndPos = this.Lines[0].Ranges[0].EndPos
+    while (this.DisplayContent[EndPos] && this.DisplayContent[EndPos].LineNumber != 0) --EndPos
+    return EndPos
+}
+
+Paragraph.prototype.GetLastArabicWordPos = function() {
+    var lastLine = this.Lines[this.Lines.length-1]
+    var lastRange = lastLine.Ranges[lastLine.Ranges.length -1]
+    var Pos = lastRange.StartPos
+    if (Pos > 0) {
+        var Item = this.DisplayContent[Pos]
+        return Item && Item.IsParaEndRun() ? Pos - 1 : Pos
+    }
+    return Pos
 }
 
 Paragraph.prototype.UpdateContentIndexing = function() {
