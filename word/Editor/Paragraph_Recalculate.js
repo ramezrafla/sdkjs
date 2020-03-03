@@ -1807,6 +1807,12 @@ Paragraph.prototype.private_RecalculateLineAlign = function(CurLine, CurPage, PR
     var Line        = this.Lines[CurLine];
     var RangesCount = Line.Ranges.length;
 
+    this.isArabic =
+        (this.Content[0] && this.Content[0].isArabic) ||
+        (this.Content[1] && this.Content[1].isArabic) ||
+        (this.Content[2] && this.Content[2].isArabic) ||
+        (this.Content[3] && this.Content[3].isArabic)
+
     for (var CurRange = 0; CurRange < RangesCount; CurRange++)
     {
         var Range = Line.Ranges[CurRange];
@@ -1822,11 +1828,55 @@ Paragraph.prototype.private_RecalculateLineAlign = function(CurLine, CurPage, PR
         if ( true === this.Numbering.Check_Range(CurRange, CurLine) )
             PRSC.Range.W += this.Numbering.WidthVisible;
 
-        for ( var Pos = StartPos; Pos <= EndPos; Pos++ )
-        {
-            var Item = this.Content[Pos];
-            Item.Recalculate_Range_Width( PRSC, CurLine, CurRange );
+
+        var AddParaEnd = false
+        if (EndPos == this.Content.length - 1 && this.Content[EndPos].Content.length == 1 && this.Content[EndPos].Content[0].Type == para_End) {
+            --EndPos
+            AddParaEnd = true
         }
+
+        var currentStack = []
+        var mainStack = []
+        var content = []
+        var isArabic = this.Content[StartPos].isArabic
+
+        for (var Pos = StartPos; Pos <= EndPos; Pos++) {
+            var Item = this.Content[Pos];
+            var curIsArabic = Item.isArabic === true
+            if (!curIsArabic && isArabic && Item.Type == para_Run && Item.IsAllSpaces()) curIsArabic = true
+            if (curIsArabic === isArabic) {
+                if (isArabic) currentStack.unshift(Item)
+                else currentStack.push(Item)
+            }
+            else {
+                if (currentStack.length) {
+                    if (this.isArabic) mainStack.unshift(currentStack)
+                    else mainStack.push(currentStack)
+                }
+                isArabic = curIsArabic
+                currentStack = [Item]
+            }
+        }
+
+        if (currentStack.length) {
+            if (this.isArabic) mainStack.unshift(currentStack)
+            else mainStack.push(currentStack)
+        }
+
+        var index = 0
+        mainStack.forEach(function(currentStack) {
+            currentStack.forEach(function(Item) {
+                content.push(Item)
+            }.bind(this))
+        }.bind(this))
+
+        if (AddParaEnd) {
+            content.push(this.Content[++EndPos])
+        }
+
+        content.forEach(function(Item) {
+            Item.Recalculate_Range_Width( PRSC, CurLine, CurRange );
+        })
 
         var JustifyWord  = 0;
         var JustifySpace = 0;
@@ -1958,9 +2008,7 @@ Paragraph.prototype.private_RecalculateLineAlign = function(CurLine, CurPage, PR
         if ( true === this.Numbering.Check_Range(CurRange, CurLine) )
             PRSA.X += this.Numbering.WidthVisible;
 
-        for ( var Pos = StartPos; Pos <= EndPos; Pos++ )
-        {
-            var Item = this.DisplayContent[Pos];
+        content.forEach(function(Item) {
             Item.Recalculate_Range_Spaces(PRSA, CurLine, CurRange, CurPage);
 
             if (!(PRSA.RecalcResult & recalcresult_NextElement))
@@ -1968,7 +2016,7 @@ Paragraph.prototype.private_RecalculateLineAlign = function(CurLine, CurPage, PR
                 PRSW.RecalcResult = PRSA.RecalcResult;
                 return PRSA.RecalcResult;
             }
-        }
+        })
     }
 
     return PRSA.RecalcResult;
