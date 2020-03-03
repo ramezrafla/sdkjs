@@ -707,7 +707,8 @@ Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bOrigPos)
     Item.Pos = OrigPos
     Item.DisplayPos = Pos
 	this.Content.splice(OrigPos, 0, Item);
-    this.DisplayContent.splice(Pos, 0, Item)
+    if (bOrigPos && this.isArabic && Pos > 0) this.DisplayContent.splice(Pos-1, 0, Item)
+    else this.DisplayContent.splice(Pos, 0, Item)
     this.UpdateContentIndexing()
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
