@@ -11968,6 +11968,7 @@ ParaRun.prototype.GenerateDisplayContent = function() {
     var string = ''
     var arabicChar
     var lastChar, lastArabicChar, isDiacriticalSymbol
+    var diff
 
     for (var i = 0; i < len; i++) {
         var value = this.Content[i].Value
@@ -11993,6 +11994,9 @@ ParaRun.prototype.GenerateDisplayContent = function() {
                     beforeLastArabicChar = lastArabicChar
                     lastChar = this.Content[i]
                     lastArabicChar = arabicChar
+                }
+                else if (IsDiacriticalSymbol(value)) {
+                    this.Content[i].break = false
                 }
                 else if (IsDiacriticalSymbol(value)) {
                     this.Content[i].break = false
