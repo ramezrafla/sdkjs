@@ -701,6 +701,7 @@ Paragraph.prototype.private_RecalculatePage = function(CurPage, bFirstRecalculat
         }
     }
 
+    this.GenerateDisplayContent()
     //-------------------------------------------------------------------------------------------------------------
     // Получаем некоторую информацию для следующей страницы (например незакрытые комментарии)
     //-------------------------------------------------------------------------------------------------------------
@@ -1041,11 +1042,15 @@ Paragraph.prototype.private_RecalculateLine = function(CurLine, CurPage, PRS, Pa
     if (false === this.private_RecalculateLineEnd(CurLine, CurPage, PRS, ParaPr))
         return;
 
+    // the ranges may have changed by now as we are recomputing line metrics
+    this.GenerateDisplayContent()
+
     //-------------------------------------------------------------------------------------------------------------
     // 14. Проверяем Последние проверки
     //-------------------------------------------------------------------------------------------------------------
     if (false === this.private_RecalculateLineCheckFootnotes(CurLine, CurPage, PRS, ParaPr))
         return;
+
 };
 
 Paragraph.prototype.private_RecalculateLineWidow = function(CurLine, CurPage, PRS, ParaPr)
@@ -1127,6 +1132,7 @@ Paragraph.prototype.private_RecalculateLineFillRanges = function(CurLine, CurPag
         PRS.RangeY = false;
         this.Lines[CurLine].Info |= paralineinfo_RangeY;
     }
+
 };
 
 Paragraph.prototype.private_RecalculateLineRanges = function(CurLine, CurPage, PRS, ParaPr)

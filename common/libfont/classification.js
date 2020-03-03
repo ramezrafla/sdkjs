@@ -1308,7 +1308,7 @@ var g_oLcidIdToNameMap = {};
 				{
 					_glyph_slot = fontslot_HAnsi;
 				}
-			}			
+			}
             else if (nHint != fonthint_EastAsia)
             {
                 _glyph_slot = this.DetectData[nUnicode];
@@ -1324,7 +1324,7 @@ var g_oLcidIdToNameMap = {};
                     return _glyph_slot;
             }
 
-            if (bCS || bRTL)
+            if (bCS)
                 return fontslot_CS;
 
             return _glyph_slot;

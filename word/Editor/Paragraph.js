@@ -1094,7 +1094,7 @@ Paragraph.prototype.Check_Range_OnlyMath = function(CurRange, CurLine)
 
 	for (var Pos = StartPos; Pos <= EndPos; Pos++)
 	{
-		this.DisplayContent[Pos].Check_Range_OnlyMath(Checker, CurRange, CurLine);
+		this.Content[Pos].Check_Range_OnlyMath(Checker, CurRange, CurLine);
 
 		if (false === Checker.Result)
 			break;
@@ -1579,10 +1579,6 @@ Paragraph.prototype.Draw = function(CurPage, pGraphics)
 
     // in case repainting moved our index
     var CurItem = this.CurItem || this.CurPos.ContentPos >= 0 && this.CurPos.ContentPos < this.DisplayContent.length && this.DisplayContent[this.CurPos.ContentPos]
-
-    // unlike with Run's we cannot regenerate when we feel like it as the document may not have recalculated yet
-    // and that recalculation is expensive -- so we use UpdateContentIndexing as a quick fix
-    this.GenerateDisplayContent()
 
 	var Pr = this.Get_CompiledPr();
 
@@ -16376,8 +16372,30 @@ Paragraph.prototype.UpdateContentIndexing = function() {
     this.DisplayContent.forEach(function(Item, Pos) { Item.DisplayPos = Pos})
 }
 
+Paragraph.prototype.DisplayLines = []
 Paragraph.prototype.GenerateDisplayContent = function() {
+    var displayUptodate = true
+    if (this.Lines.length != this.DisplayLines.length) displayUptodate = false
+    else {
+        var i = 0
+        while (displayUptodate && i < this.Lines.length) {
+            if (2*this.Lines[i].Ranges.length != this.DisplayLines[i].length) displayUptodate = false
+            else {
+                var j = 0
+                while (displayUptodate && j < this.Lines[i].Ranges.length) {
+                    if (this.Lines[i].Ranges[j].StartPos != this.DisplayLines[i][2*j]) displayUptodate = false
+                    else if (this.Lines[i].Ranges[j].EndPos != this.DisplayLines[i][2*j+1]) displayUptodate = false
+                    j++
+                }
+            }
+            i++
+        }
+    }
+
+    if (displayUptodate) return
+
     this.DisplayContent = []
+    this.DisplayLines = []
     this.Content.forEach(function(Item, Pos) {
         delete Item.DisplayPos
         delete Item.LineNumber
@@ -16385,96 +16403,86 @@ Paragraph.prototype.GenerateDisplayContent = function() {
         Item.Pos = Pos
     })
 
-    this.Pages.forEach(function(Page) {
-        if (Page.EndLine < 0)
-    		return;
+    this.isArabic =
+        (this.Content[0] && this.Content[0].isArabic) ||
+        (this.Content[1] && this.Content[1].isArabic) ||
+        (this.Content[2] && this.Content[2].isArabic) ||
+        (this.Content[3] && this.Content[3].isArabic)
 
-        var StartLine = Page.StartLine;
-    	var EndLine   = Page.EndLine;
+    this.Lines.forEach(function(Line, LineNumber) {
+        var DisplayRanges = []
 
-        this.isArabic =
-            (this.Content[0] && this.Content[0].isArabic) ||
-            (this.Content[1] && this.Content[1].isArabic) ||
-            (this.Content[2] && this.Content[2].isArabic) ||
-            (this.Content[3] && this.Content[3].isArabic)
+		Line.Ranges.forEach(function(Range) {
+			var StartPos = Range.StartPos;
+			var EndPos   = Range.EndPos;
+            DisplayRanges.push(StartPos)
+            DisplayRanges.push(EndPos)
+            var AddParaEnd = false
+            if (EndPos == this.Content.length - 1 && this.Content[EndPos].Content.length == 1 && this.Content[EndPos].Content[0].Type == para_End) {
+                --EndPos
+                AddParaEnd = true
+            }
 
-    	for (var CurLine = StartLine; CurLine <= EndLine; CurLine++)
-    	{
-    		var Line        = this.Lines[CurLine];
-    		var RangesCount = Line.Ranges.length;
+            var currentStack = []
+            var mainStack = []
+            var isArabic = this.Content[StartPos].isArabic
 
-    		for (var CurRange = 0; CurRange < RangesCount; CurRange++)
-    		{
-    			var Range = Line.Ranges[CurRange];
-    			var StartPos = Range.StartPos;
-    			var EndPos   = Range.EndPos;
-                var AddParaEnd = false
-                if (EndPos == this.Content.length - 1 && this.Content[EndPos].Content.length == 1 && this.Content[EndPos].Content[0].Type == para_End) {
-                    --EndPos
-                    AddParaEnd = true
+            for (var Pos = StartPos; Pos <= EndPos; Pos++) {
+                var Item = this.Content[Pos];
+                Item.Pos = Pos
+                // if this item is already positioned we remove it from the list
+                if (Item.DisplayPos != null) {
+                    // note: we assume that we only go back one run -- otherwise we have a bug here
+                    PrevItem = Item
+                    var DisplayPos = Item.DisplayPos
+                    this.DisplayContent.splice(DisplayPos, 1)
+                    for (var i = DisplayPos; i < this.DisplayContent.length; i++) this.DisplayContent[i].DisplayPos = i
                 }
-
-                var currentStack = []
-                var mainStack = []
-                var isArabic = this.Content[StartPos].isArabic
-
-                for (var Pos = StartPos; Pos <= EndPos; Pos++) {
-                    var Item = this.Content[Pos];
-                    Item.Pos = Pos
-                    // if this item is already positioned we remove it from the list
-                    if (Item.DisplayPos != null) {
-                        // note: we assume that we only go back one run -- otherwise we have a bug here
-                        PrevItem = Item
-                        var DisplayPos = Item.DisplayPos
-                        this.DisplayContent.splice(DisplayPos, 1)
-                        for (var i = DisplayPos; i < this.DisplayContent.length; i++) this.DisplayContent[i].DisplayPos = i
-                    }
-                    var curIsArabic = Item.isArabic === true
-                    if (!curIsArabic && isArabic && Item.Type == para_Run && Item.IsAllSpaces()) curIsArabic = true
-                    if (curIsArabic === isArabic) {
-                        if (isArabic) currentStack.unshift(Item)
-                        else currentStack.push(Item)
-                    }
-                    else {
-                        if (currentStack.length) {
-                            if (this.isArabic) mainStack.unshift(currentStack)
-                            else mainStack.push(currentStack)
-                        }
-                        isArabic = curIsArabic
-                        currentStack = [Item]
-                    }
+                var curIsArabic = Item.isArabic === true
+                if (!curIsArabic && isArabic && Item.Type == para_Run && Item.IsAllSpaces()) curIsArabic = true
+                if (curIsArabic === isArabic) {
+                    if (isArabic) currentStack.unshift(Item)
+                    else currentStack.push(Item)
                 }
-
-                if (currentStack.length) {
-                    if (this.isArabic) mainStack.unshift(currentStack)
-                    else mainStack.push(currentStack)
-                }
-
-                var index = 0
-                mainStack.forEach(function(currentStack) {
-                    currentStack.forEach(function(Item) {
-                        var DisplayPos = StartPos + index
-                        this.DisplayContent[DisplayPos] = Item
-                        Item.DisplayPos = DisplayPos
-                        Item.LineNumber = CurLine
-                        Item.LinePos = index
-                        ++index
-                    }.bind(this))
-                }.bind(this))
-
-                if (AddParaEnd) {
-                    ++EndPos
-                    var Item = this.Content[EndPos]
-                    this.DisplayContent[EndPos] = Item
-                    Item.LineNumber = CurLine
-                    Item.Pos = EndPos
-                    Item.DisplayPos = EndPos
-                    Item.LinePos = EndPos > 0 ? this.DisplayContent[EndPos-1].LinePos+1 : 0
+                else {
+                    if (currentStack.length) {
+                        if (this.isArabic) mainStack.unshift(currentStack)
+                        else mainStack.push(currentStack)
+                    }
+                    isArabic = curIsArabic
+                    currentStack = [Item]
                 }
             }
-        }
 
-    }.bind(this))
+            if (currentStack.length) {
+                if (this.isArabic) mainStack.unshift(currentStack)
+                else mainStack.push(currentStack)
+            }
+
+            var index = 0
+            mainStack.forEach(function(currentStack) {
+                currentStack.forEach(function(Item) {
+                    var DisplayPos = StartPos + index
+                    this.DisplayContent[DisplayPos] = Item
+                    Item.DisplayPos = DisplayPos
+                    Item.LineNumber = LineNumber
+                    Item.LinePos = index
+                    ++index
+                }.bind(this))
+            }.bind(this))
+
+            if (AddParaEnd) {
+                ++EndPos
+                var Item = this.Content[EndPos]
+                this.DisplayContent[EndPos] = Item
+                Item.LineNumber = LineNumber
+                Item.Pos = EndPos
+                Item.DisplayPos = EndPos
+                Item.LinePos = EndPos > 0 ? this.DisplayContent[EndPos-1].LinePos+1 : 0
+            }
+        }.bind(this)) // Ranges
+        this.DisplayLines.push(DisplayRanges)
+    }.bind(this)) // Lines
 }
 
 //--------------------------------------------------------export----------------------------------------------------
