@@ -482,7 +482,7 @@ Paragraph.prototype.StartFromNewPage = function()
     this.Lines[-1] = new CParaLine();
 };
 
-Paragraph.prototype.private_RecalculateFastRange       = function(CurRange, CurLine)
+Paragraph.prototype.private_RecalculateFastRange = function(CurRange, CurLine)
 {
     var PRS = this.m_oPRSW;
 
@@ -709,7 +709,7 @@ Paragraph.prototype.private_RecalculatePage            = function(CurPage, bFirs
     return RecalcResult;
 };
 
-Paragraph.prototype.private_RecalculatePageKeepNext    = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculatePageKeepNext = function(CurLine, CurPage, PRS, ParaPr)
 {
     // Такая настройка срабатывает в единственном случае:
     // У предыдущего параграфа выставлена данная настройка, а текущий параграф сразу начинается с новой страницы
@@ -763,7 +763,7 @@ Paragraph.prototype.private_RecalculatePageKeepNext    = function(CurLine, CurPa
     return true;
 };
 
-Paragraph.prototype.private_RecalculatePageXY          = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculatePageXY = function(CurLine, CurPage, PRS, ParaPr)
 {
     // Если это первая страница параграфа (CurPage = 0), тогда мы должны использовать координаты, которые нам
     // были заданы сверху, а если не первая, тогда координаты мы должны запросить у родительского класса.
@@ -1048,7 +1048,7 @@ Paragraph.prototype.private_RecalculateLine            = function(CurLine, CurPa
         return;
 };
 
-Paragraph.prototype.private_RecalculateLineWidow       = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateLineWidow = function(CurLine, CurPage, PRS, ParaPr)
 {
     // Висячие строки обрабатываются только внутри основного документа
     if ( this.Parent instanceof CDocument && true === this.Parent.RecalcInfo.Check_WidowControl(this, CurLine) )
@@ -1068,7 +1068,7 @@ Paragraph.prototype.private_RecalculateLineWidow       = function(CurLine, CurPa
     return true;
 };
 
-Paragraph.prototype.private_RecalculateLineFillRanges  = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateLineFillRanges = function(CurLine, CurPage, PRS, ParaPr)
 {
     this.Lines[CurLine].Info = 0;
 
@@ -1129,7 +1129,7 @@ Paragraph.prototype.private_RecalculateLineFillRanges  = function(CurLine, CurPa
     }
 };
 
-Paragraph.prototype.private_RecalculateLineRanges      = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateLineRanges = function(CurLine, CurPage, PRS, ParaPr)
 {
     var RangesCount = PRS.RangesCount;
     var CurRange = 0;
@@ -1185,7 +1185,7 @@ Paragraph.prototype.private_RecalculateLineInfo        = function(CurLine, CurPa
     	this.Lines[CurLine].Info |= paralineinfo_TextOnLine;
 };
 
-Paragraph.prototype.private_RecalculateLineMetrics     = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateLineMetrics = function(CurLine, CurPage, PRS, ParaPr)
 {
     var Line = this.Lines[CurLine];
     var RangesCount = Line.Ranges.length;
@@ -1266,7 +1266,7 @@ Paragraph.prototype.private_RecalculateLineMetrics     = function(CurLine, CurPa
 		this.Lines[CurLine].Metrics.Descent = 0;
 };
 
-Paragraph.prototype.private_RecalculateLinePosition    = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateLinePosition = function(CurLine, CurPage, PRS, ParaPr)
 {
 	// Важно: Значение Border.Space учитывается всегда, даже когда Border.Value = none, а
 	//        вот Border.Size зависит уже от Border.Value
@@ -1600,7 +1600,7 @@ Paragraph.prototype.private_RecalculateLineCheckRanges = function(CurLine, CurPa
     return true;
 };
 
-Paragraph.prototype.private_RecalculateLineBaseLine    = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateLineBaseLine = function(CurLine, CurPage, PRS, ParaPr)
 {
     if (this.Lines[CurLine].Info & paralineinfo_RangeY)
     {
@@ -1770,7 +1770,7 @@ Paragraph.prototype.private_RecalculateLineEnd         = function(CurLine, CurPa
     return true;
 };
 
-Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPage, PRS, ParaPr, Fast)
+Paragraph.prototype.private_RecalculateLineAlign = function(CurLine, CurPage, PRS, ParaPr, Fast)
 {
     // Здесь мы пересчитываем ширину пробелов (и в особенных случаях дополнительное
     // расстояние между символами) с учетом прилегания параграфа.
@@ -1960,7 +1960,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 
         for ( var Pos = StartPos; Pos <= EndPos; Pos++ )
         {
-            var Item = this.Content[Pos];
+            var Item = this.DisplayContent[Pos];
             Item.Recalculate_Range_Spaces(PRSA, CurLine, CurRange, CurPage);
 
             if (!(PRSA.RecalcResult & recalcresult_NextElement))
@@ -2009,7 +2009,7 @@ Paragraph.prototype.private_RecalculateLineCheckFootnotes = function(CurLine, Cu
 	return true;
 };
 
-Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurLine, CurPage, RangesCount, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateRange = function(CurRange, CurLine, CurPage, RangesCount, PRS, ParaPr)
 {
     // Найдем начальную позицию данного отрезка
     var StartPos = 0;
@@ -2097,7 +2097,7 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
     }
 };
 
-Paragraph.prototype.private_RecalculateRangeEndPos     = function(PRS, PRP, Depth)
+Paragraph.prototype.private_RecalculateRangeEndPos = function(PRS, PRP, Depth)
 {
     var CurLine  = PRS.Line;
     var CurRange = PRS.Range;
