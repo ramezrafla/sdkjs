@@ -491,13 +491,15 @@ ParaText.prototype.CanStartAutoCorrect = function()
 	|| 39 === this.Value
 	|| 45 === this.Value);
 };
+
+// https://en.wikipedia.org/wiki/Arabic_script_in_Unicode
 ParaText.prototype.IsDiacriticalSymbol = function()
 {
-	return !!(0x0300 <= this.Value && this.Value <= 0x036F);
+	return (0x0300 <= this.Value && this.Value <= 0x036F) || (1611 <= this.Value && this.Value <= 1618)
 };
 ParaText.prototype.IsDot = function()
 {
-	return !!(this.Value === 0x002E);
+	return this.Value === 0x002E;
 };
 
 /**
