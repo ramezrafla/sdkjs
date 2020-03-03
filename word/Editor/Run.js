@@ -11955,6 +11955,11 @@ Object.keys(arabicChars).forEach(function(key) {
     o.final = o.final.charCodeAt(0)
 })
 
+// https://en.wikipedia.org/wiki/Arabic_script_in_Unicode
+function IsDiacriticalSymbol(Value) {
+	return 1611 <= Value && Value <= 1618
+}
+
 ParaRun.prototype.GenerateDisplayContent = function() {
     var isArabic = false
     var hasArabic = false
@@ -11962,7 +11967,7 @@ ParaRun.prototype.GenerateDisplayContent = function() {
     var len = this.Content.length
     var string = ''
     var arabicChar
-    var diff
+    var lastChar, lastArabicChar, isDiacriticalSymbol
 
     for (var i = 0; i < len; i++) {
         var value = this.Content[i].Value
@@ -11973,37 +11978,58 @@ ParaRun.prototype.GenerateDisplayContent = function() {
             if (!isArabic) {
                 isArabic = true
                 hasArabic = true
-                start = i
                 this.Content[i].DisplayValue = arabicChar.initial
                 this.Content[i].break = arabicChar.break
+                beforeLastChar = null
+                beforeLastArabicChar = null
+                lastChar = this.Content[i]
+                lastArabicChar = arabicChar
             }
             else {
                 if (arabicChar) {
-                    this.Content[i].DisplayValue = this.Content[i-1].break ? arabicChar.initial : arabicChar.medial
+                    this.Content[i].DisplayValue = !lastChar || lastChar.break ? arabicChar.initial : arabicChar.medial
                     this.Content[i].break = arabicChar.break
+                    beforeLastChar = lastChar
+                    beforeLastArabicChar = lastArabicChar
+                    lastChar = this.Content[i]
+                    lastArabicChar = arabicChar
                 }
-                // period or comma
+                else if (IsDiacriticalSymbol(value)) {
+                    this.Content[i].break = false
+                }
+                // any non-arabic char or space
                 else {
                     this.Content[i].break = true
                     isArabic = false
-                    diff = i - start
-                    arabicChar = arabicChars[this.Content[i-1].Value]
-                    if (diff == 1) this.Content[i-1].DisplayValue = arabicChar.isolated
-                    else this.Content[i-1].DisplayValue = this.Content[i-2].break ? arabicChar.isolated : arabicChar.final
+                    if (beforeLastArabicChar) {
+                        lastChar.DisplayValue = beforeLastArabicChar.break ? lastArabicChar.isolated : lastArabicChar.final
+                    }
+                    else {
+                        lastChar.DisplayValue = lastArabicChar.isolated
+                    }
+                    lastChar = null
+                    lastArabicChar = null
+                    beforeLastChar = null
+                    beforeLastArabicChar = null
                 }
             }
         }
         else {
+            lastChar = null
+            lastArabicChar = null
+            beforeLastChar = null
+            beforeLastArabicChar = null
             this.Content[i].break = true
         }
         resultContent.push(this.Content[i])
     }
 
-    if (isArabic) {
-        arabicChar = arabicChars[this.Content[len-1].Value]
-        if (arabicChar) {
-            if (len == 1) this.Content[0].DisplayValue = arabicChar.isolated
-            else this.Content[len-1].DisplayValue = this.Content[len-2].break ? arabicChar.isolated : arabicChar.final
+    if (lastArabicChar) {
+        if (beforeLastArabicChar) {
+            lastChar.DisplayValue = beforeLastArabicChar.break ? lastArabicChar.isolated : lastArabicChar.final
+        }
+        else {
+            lastChar.DisplayValue = lastArabicChar.isolated
         }
     }
 
