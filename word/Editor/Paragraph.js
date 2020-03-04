@@ -11190,7 +11190,10 @@ Paragraph.prototype.Split = function(NewParagraph)
 	// Разделяем текущий элемент (возвращается правая, отделившаяся часть, если она null, тогда заменяем
 	// ее на пустой ран с заданными настройками).
     var OrigCurPos = this.GetOrigPos(CurPos)
-    if (this.isArabic && OrigCurPos > 0) --OrigCurPos
+    if (this.isArabic && OrigCurPos > 0) {
+        var Item = this.Content[OrigCurPos]
+        if (Item.State.ContentPos > Item.Content.length - 3) --OrigCurPos
+    }
 
 	var NewElement
 
@@ -11239,8 +11242,8 @@ Paragraph.prototype.Split = function(NewParagraph)
 		NewParagraph.Set_SectionPr(SectPr);
 	}
 
-	this.MoveCursorToEndPos(false, false);
-	NewParagraph.MoveCursorToStartPos(false);
+	// this.MoveCursorToEndPos(false, false);
+	// NewParagraph.MoveCursorToStartPos(false);
 
 	NewParagraph.DeleteCommentOnRemove = true;
 	this.DeleteCommentOnRemove         = true;
