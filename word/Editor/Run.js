@@ -5574,7 +5574,6 @@ ParaRun.prototype.Draw_Elements = function(PDSE)
 
 	var isHiddenCFPart = PDSE.ComplexFields.IsComplexFieldCode();
 
-    this.GenerateDisplayContent()
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
 		var Item = this.private_CheckInstrText(this.DisplayContent[Pos]);
