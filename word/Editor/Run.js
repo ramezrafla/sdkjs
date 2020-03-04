@@ -1136,6 +1136,7 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
 
     /// now we merge with next Run if we have no spaces and are at the end
     if (this.isArabic && this.State.ContentPos == this.Content.length && this.Content[0].Type == para_Text) {
+        var prevPos = this.State.ContentPos
         var Parent = this.GetParent()
         var PrevRun = Parent.GetPrevArabicWord(this.DisplayPos)
         if (PrevRun && PrevRun.Content.length == 1 && PrevRun.Content[0].Type == para_Space) PrevRun = Parent.GetPrevArabicWord(PrevRun.DisplayPos)
@@ -1144,6 +1145,7 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
                 this.Add_ToContent(0, Item, false, true)
             }.bind(this))
             Parent.Internal_Content_Remove(PrevRun.Pos, true)
+            this.State.ContentPos = prevPos
             this.Make_ThisElementCurrent()
         }
     }
@@ -1156,6 +1158,7 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
                 this.Add_ToContent(this.Content.length, Item, false, true)
             }.bind(this))
             Parent.Internal_Content_Remove(NextRun.Pos, true)
+            this.State.ContentPos = NextRun.Content.length
             this.Make_ThisElementCurrent()
         }
     }

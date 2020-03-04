@@ -1577,9 +1577,6 @@ Paragraph.prototype.Draw = function(CurPage, pGraphics)
 		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_PARAGRAPH);
 	}
 
-    // in case repainting moved our index
-    var CurItem = this.CurItem || this.CurPos.ContentPos >= 0 && this.CurPos.ContentPos < this.DisplayContent.length && this.DisplayContent[this.CurPos.ContentPos]
-
 	var Pr = this.Get_CompiledPr();
 
 	// Задаем обрезку, если данный параграф является рамкой
@@ -1661,9 +1658,9 @@ Paragraph.prototype.Draw = function(CurPage, pGraphics)
 		pGraphics.End_Command();
 	}
 
-    if (CurItem) {
+    if (this.CurItem) {
+        this.CurPos.ContentPos = this.CurItem.DisplayPos
         this.CurItem = null
-        this.CurPos.ContentPos = CurItem.DisplayPos
         // to support spreadsheet
         this.LogicDocument && this.LogicDocument.private_UpdateCursorXY && this.LogicDocument.private_UpdateCursorXY()
     }
@@ -16394,12 +16391,19 @@ Paragraph.prototype.GenerateDisplayContent = function() {
 
     if (displayUptodate) return
 
+    // in case repainting moves our index
+    if (!this.CurItem) {
+        if (this.CurPos.ContentPos >= 0 && this.CurPos.ContentPos < this.DisplayContent.length && this.DisplayContent[this.CurPos.ContentPos]) {
+            this.CurItem = this.DisplayContent[this.CurPos.ContentPos]
+        }
+    }
+
+
     this.DisplayContent = []
     this.DisplayLines = []
     this.Content.forEach(function(Item, Pos) {
         delete Item.DisplayPos
         delete Item.LineNumber
-        delete Item.LinePos
         Item.Pos = Pos
     })
 
@@ -16417,6 +16421,8 @@ Paragraph.prototype.GenerateDisplayContent = function() {
 			var EndPos   = Range.EndPos;
             DisplayRanges.push(StartPos)
             DisplayRanges.push(EndPos)
+
+            // handing ParaEnd which needs to be the last element in DisplayContent
             var AddParaEnd = false
             if (EndPos == this.Content.length - 1 && this.Content[EndPos].Content.length == 1 && this.Content[EndPos].Content[0].Type == para_End) {
                 --EndPos
@@ -16429,7 +16435,6 @@ Paragraph.prototype.GenerateDisplayContent = function() {
 
             for (var Pos = StartPos; Pos <= EndPos; Pos++) {
                 var Item = this.Content[Pos];
-                Item.Pos = Pos
                 // if this item is already positioned we remove it from the list
                 if (Item.DisplayPos != null) {
                     // note: we assume that we only go back one run -- otherwise we have a bug here
@@ -16466,7 +16471,6 @@ Paragraph.prototype.GenerateDisplayContent = function() {
                     this.DisplayContent[DisplayPos] = Item
                     Item.DisplayPos = DisplayPos
                     Item.LineNumber = LineNumber
-                    Item.LinePos = index
                     ++index
                 }.bind(this))
             }.bind(this))
@@ -16476,9 +16480,7 @@ Paragraph.prototype.GenerateDisplayContent = function() {
                 var Item = this.Content[EndPos]
                 this.DisplayContent[EndPos] = Item
                 Item.LineNumber = LineNumber
-                Item.Pos = EndPos
                 Item.DisplayPos = EndPos
-                Item.LinePos = EndPos > 0 ? this.DisplayContent[EndPos-1].LinePos+1 : 0
             }
         }.bind(this)) // Ranges
         this.DisplayLines.push(DisplayRanges)
