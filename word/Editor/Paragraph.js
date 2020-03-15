@@ -3171,7 +3171,8 @@ Paragraph.prototype.Remove = function(nCount, isRemoveWholeElement, bRemoveOnlyS
 		}
 
 		var ContentPos = this.CurPos.ContentPos;
-        if (this.DisplayContent[ContentPos].isArabic) Direction *= -1
+        // we need to take into account backspace at the beginning of the Arabic line (or in fact end of LTR)
+        if (this.DisplayContent[ContentPos].isArabic || this.isArabic && this.DisplayContent[ContentPos].IsEmpty()) Direction *= -1
 		while (false === this.DisplayContent[ContentPos].Remove(Direction, bOnAddText))
 		{
 			if (Direction < 0)
@@ -3286,7 +3287,7 @@ Paragraph.prototype.Remove = function(nCount, isRemoveWholeElement, bRemoveOnlyS
 			{
 				this.Remove_PresentationNumbering();
 			}
-			else if(this.bFromDocument)
+			else if (!this.isArabic && this.bFromDocument)
 			{
              	if (align_Right === Pr.Jc)
                 {
@@ -5027,7 +5028,7 @@ Paragraph.prototype.Get_PageStartPos = function(CurPage)
 
 	return this.Get_StartRangePos2(CurLine, CurRange);
 };
-Paragraph.prototype.Get_LeftPos = function(SearchPos, ContentPos)
+Paragraph.prototype.Get_LeftPos = function(SearchPos, ContentPos, ignoreArabic)
 {
 	SearchPos.InitComplexFields(this.GetComplexFieldsByPos(ContentPos, true));
 
@@ -5041,7 +5042,7 @@ Paragraph.prototype.Get_LeftPos = function(SearchPos, ContentPos)
 		return true;
 
     // if we are here it means we failed to move to the left within the same run
-    if (this.isArabic) {
+    if (!ignoreArabic && this.isArabic) {
         var NextRun = this.GetNextArabicWord(CurPos)
         if (NextRun) {
             // При выходе из формулы встаем в конец рана
@@ -5077,7 +5078,7 @@ Paragraph.prototype.Get_LeftPos = function(SearchPos, ContentPos)
 
 	return false;
 };
-Paragraph.prototype.Get_RightPos = function(SearchPos, ContentPos, StepEnd)
+Paragraph.prototype.Get_RightPos = function(SearchPos, ContentPos, StepEnd, ignoreArabic)
 {
 	SearchPos.InitComplexFields(this.GetComplexFieldsByPos(ContentPos, true));
 
@@ -5108,7 +5109,7 @@ Paragraph.prototype.Get_RightPos = function(SearchPos, ContentPos, StepEnd)
     // if we are here it means we failed to move to the right within the same run
     var Count = this.DisplayContent.length;
 
-    if (this.isArabic) {
+    if (!ignoreArabic && this.isArabic) {
         var PrevRun = this.GetPrevArabicWord(CurPos)
         if (PrevRun) {
             // При выходе из формулы встаем в конец рана
@@ -9217,7 +9218,7 @@ Paragraph.prototype.IsCursorAtEnd = function(_ContentPos)
 	var ContentPos = ( undefined === _ContentPos ? this.Get_ParaContentPos(false, false) : _ContentPos );
 	var SearchPos  = new CParagraphSearchPos();
 
-	this.Get_RightPos(SearchPos, ContentPos, false);
+	this.Get_RightPos(SearchPos, ContentPos, false, true);
 
 	if (true === SearchPos.Found)
 		return false;
@@ -9237,7 +9238,7 @@ Paragraph.prototype.IsCursorAtBegin = function(_ContentPos, bCheckAnchors)
 	if (true === bCheckAnchors)
 		SearchPos.SetCheckAnchors();
 
-	this.Get_LeftPos(SearchPos, ContentPos);
+	this.Get_LeftPos(SearchPos, ContentPos, true);
 
 	if (true === SearchPos.Found)
 		return false;

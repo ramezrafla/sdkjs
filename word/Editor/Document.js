@@ -14088,7 +14088,7 @@ CDocument.prototype.controller_AddNewParagraph = function(bRecalculate, bForceAd
 			var NewParagraph   = new Paragraph(this.DrawingDocument, this);
 
 			// Проверим позицию в текущем параграфе
-			if (true === Item.IsCursorAtEnd())
+			if (!Item.isArabic && true === Item.IsCursorAtEnd())
 			{
 				var StyleId = Item.Style_Get();
 				var NextId  = undefined;
