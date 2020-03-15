@@ -326,11 +326,10 @@ CChangesParagraphAddItem.prototype.Undo = function()
     var Item = oParagraph.Content[this.Pos] || oParagraph.Content[this.Pos-1]
 	oParagraph.Content.splice(this.Pos, this.Items.length);
     oParagraph.DisplayContent = oParagraph.Content.slice()
-    oParagraph.CurItem = Item
     oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphAddItem.prototype.Redo = function()
 {
@@ -343,17 +342,15 @@ CChangesParagraphAddItem.prototype.Redo = function()
     oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 
 	for (var nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
 	{
 		var oItem = this.Items[nIndex];
-		oItem.Parent = this.Class;
-		if (oItem.SetParagraph)
-			oItem.SetParagraph(this.Class);
-
-		if (oItem.Recalc_RunsCompiledPr)
-			oItem.Recalc_RunsCompiledPr();
+		oItem.Parent = oParagraph
+		oItem.SetParagraph && oItem.SetParagraph(oParagraph)
+		oItem.Recalc_RunsCompiledPr && oItem.Recalc_RunsCompiledPr()
+        oItem.GenerateDisplayContent && oItem.GenerateDisplayContent()
 	}
 };
 CChangesParagraphAddItem.prototype.private_WriteItem = function(Writer, Item)
@@ -405,7 +402,7 @@ CChangesParagraphAddItem.prototype.Load = function(Color)
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphAddItem.prototype.IsRelated = function(oChanges)
 {
@@ -452,23 +449,19 @@ CChangesParagraphRemoveItem.prototype.Undo = function()
 	var Array_end   = oParagraph.Content.slice(this.Pos);
 
     oParagraph.Content = Array_start.concat(this.Items, Array_end);
-    oParagraph.CurItem = this.Items[0]
     oParagraph.DisplayContent = oParagraph.Content.slice()
     oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 
 	for (var nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
 	{
-		var oItem = this.Items[nIndex];
-
-		oItem.Parent = this.Class;
-		if (oItem.SetParagraph)
-			oItem.SetParagraph(this.Class);
-
-		if (oItem.Recalc_RunsCompiledPr)
-			oItem.Recalc_RunsCompiledPr();
+		var oItem = this.Items[nIndex]
+		oItem.Parent = oParagraph
+		oItem.SetParagraph && oItem.SetParagraph(oParagraph)
+		oItem.Recalc_RunsCompiledPr && oItem.Recalc_RunsCompiledPr()
+        oItem.GenerateDisplayContent && oItem.GenerateDisplayContent()
 	}
 };
 CChangesParagraphRemoveItem.prototype.Redo = function()
@@ -479,7 +472,7 @@ CChangesParagraphRemoveItem.prototype.Redo = function()
     oParagraph.UpdateContentIndexing()
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphRemoveItem.prototype.private_WriteItem = function(Writer, Item)
 {
@@ -508,7 +501,7 @@ CChangesParagraphRemoveItem.prototype.Load = function(Color)
 	oParagraph.private_UpdateTrackRevisions();
 	oParagraph.private_CheckUpdateBookmarks(this.Items);
 
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphRemoveItem.prototype.IsRelated = function(oChanges)
 {
@@ -561,7 +554,7 @@ CChangesParagraphNumbering.prototype.private_SetValue = function(Value)
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
 
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphNumbering.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphNumbering.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -583,7 +576,7 @@ CChangesParagraphAlign.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphAlign.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphAlign.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -609,7 +602,7 @@ CChangesParagraphIndFirst.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphIndFirst.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphIndFirst.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -634,7 +627,7 @@ CChangesParagraphDefaultTabSize.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphDefaultTabSize.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphDefaultTabSize.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -661,7 +654,7 @@ CChangesParagraphIndLeft.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphIndLeft.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphIndLeft.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -687,7 +680,7 @@ CChangesParagraphIndRight.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphIndRight.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphIndRight.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -709,7 +702,7 @@ CChangesParagraphContextualSpacing.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphContextualSpacing.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphContextualSpacing.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -731,7 +724,7 @@ CChangesParagraphKeepLines.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphKeepLines.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphKeepLines.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -753,7 +746,7 @@ CChangesParagraphKeepNext.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphKeepNext.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphKeepNext.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -775,7 +768,7 @@ CChangesParagraphPageBreakBefore.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphPageBreakBefore.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphPageBreakBefore.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -801,7 +794,7 @@ CChangesParagraphSpacingLine.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphSpacingLine.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphSpacingLine.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -827,7 +820,7 @@ CChangesParagraphSpacingLineRule.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphSpacingLineRule.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphSpacingLineRule.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -853,7 +846,7 @@ CChangesParagraphSpacingBefore.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphSpacingBefore.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphSpacingBefore.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -879,7 +872,7 @@ CChangesParagraphSpacingAfter.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphSpacingAfter.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphSpacingAfter.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -905,7 +898,7 @@ CChangesParagraphSpacingAfterAutoSpacing.prototype.private_SetValue = function(V
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphSpacingAfterAutoSpacing.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphSpacingAfterAutoSpacing.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -931,7 +924,7 @@ CChangesParagraphSpacingBeforeAutoSpacing.prototype.private_SetValue = function(
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphSpacingBeforeAutoSpacing.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphSpacingBeforeAutoSpacing.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -957,7 +950,7 @@ CChangesParagraphShdValue.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphShdValue.prototype.Merge = private_ParagraphChangesOnMergeShdPr;
 CChangesParagraphShdValue.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -991,7 +984,7 @@ CChangesParagraphShdColor.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphShdColor.prototype.Merge = private_ParagraphChangesOnMergeShdPr;
 CChangesParagraphShdColor.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1025,7 +1018,7 @@ CChangesParagraphShdUnifill.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphShdUnifill.prototype.Merge = private_ParagraphChangesOnMergeShdPr;
 CChangesParagraphShdUnifill.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1055,7 +1048,7 @@ CChangesParagraphShd.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphShd.prototype.Merge = function(oChange)
 {
@@ -1112,7 +1105,7 @@ CChangesParagraphWidowControl.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphWidowControl.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphWidowControl.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1138,7 +1131,7 @@ CChangesParagraphTabs.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphTabs.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphTabs.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1161,7 +1154,7 @@ CChangesParagraphPStyle.prototype.private_SetValue = function(Value)
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
 	oParagraph.Recalc_RunsCompiledPr();
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphPStyle.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphPStyle.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1187,7 +1180,7 @@ CChangesParagraphBordersBetween.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphBordersBetween.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphBordersBetween.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1213,7 +1206,7 @@ CChangesParagraphBordersBottom.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphBordersBottom.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphBordersBottom.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1239,7 +1232,7 @@ CChangesParagraphBordersLeft.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphBordersLeft.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphBordersLeft.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1265,7 +1258,7 @@ CChangesParagraphBordersRight.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphBordersRight.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphBordersRight.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1291,7 +1284,7 @@ CChangesParagraphBordersTop.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphBordersTop.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphBordersTop.prototype.Load = private_ParagraphChangesOnLoadPr;
@@ -1317,7 +1310,7 @@ CChangesParagraphPr.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphPr.prototype.private_IsCreateEmptyObject = function()
 {
@@ -1566,7 +1559,7 @@ CChangesParagraphPresentationPrBullet.prototype.private_SetValue = function(Valu
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.Recalc_RunsCompiledPr();
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 /**
  * @constructor
@@ -1587,7 +1580,7 @@ CChangesParagraphPresentationPrLevel.prototype.private_SetValue = function(Value
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.Recalc_RunsCompiledPr();
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 /**
  * @constructor
@@ -1610,7 +1603,7 @@ CChangesParagraphFramePr.prototype.private_SetValue = function(Value)
 	oParagraph.Pr.FramePr = Value;
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphFramePr.prototype.Merge = private_ParagraphChangesOnMergePr;
 /**
@@ -1633,7 +1626,7 @@ CChangesParagraphSectPr.prototype.Undo = function()
 	var oOldSectPr = oParagraph.SectPr;
 	oParagraph.SectPr = this.Old;
 	oParagraph.LogicDocument.UpdateSectionInfo(oOldSectPr, this.Old, false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphSectPr.prototype.Redo = function()
 {
@@ -1641,7 +1634,7 @@ CChangesParagraphSectPr.prototype.Redo = function()
 	var oOldSectPr = oParagraph.SectPr;
 	oParagraph.SectPr = this.New;
 	oParagraph.LogicDocument.UpdateSectionInfo(oOldSectPr, this.New, false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphSectPr.prototype.WriteToBinary = function(Writer)
 {
@@ -1718,7 +1711,7 @@ CChangesParagraphPrChange.prototype.Undo = function()
 	oParagraph.Pr.PrChange   = this.Old.PrChange;
 	oParagraph.Pr.ReviewInfo = this.Old.ReviewInfo;
 	oParagraph.private_UpdateTrackRevisions();
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphPrChange.prototype.Redo = function()
 {
@@ -1726,7 +1719,7 @@ CChangesParagraphPrChange.prototype.Redo = function()
 	oParagraph.Pr.PrChange   = this.New.PrChange;
 	oParagraph.Pr.ReviewInfo = this.New.ReviewInfo;
 	oParagraph.private_UpdateTrackRevisions();
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphPrChange.prototype.WriteToBinary = function(Writer)
 {
@@ -1880,7 +1873,7 @@ CChangesParagraphPrReviewInfo.prototype.private_SetValue = function(Value)
 	var oParagraph = this.Class;
 	oParagraph.Pr.ReviewInfo = Value;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphPrReviewInfo.prototype.Merge = function(oChange)
 {
@@ -1910,7 +1903,7 @@ CChangesParagraphOutlineLvl.prototype.private_SetValue = function(Value)
 
 	oParagraph.CompiledPr.NeedRecalc = true;
 	oParagraph.private_UpdateTrackRevisionOnChangeParaPr(false);
-	private_ParagraphChangesOnSetValue(this.Class);
+	private_ParagraphChangesOnSetValue(oParagraph);
 };
 CChangesParagraphOutlineLvl.prototype.Merge = private_ParagraphChangesOnMergePr;
 CChangesParagraphOutlineLvl.prototype.Load = private_ParagraphChangesOnLoadPr;

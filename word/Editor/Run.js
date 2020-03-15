@@ -1141,10 +1141,11 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         var PrevRun = Parent.GetPrevArabicWord(this.DisplayPos)
         if (PrevRun && PrevRun.Content.length == 1 && PrevRun.Content[0].Type == para_Space) PrevRun = Parent.GetPrevArabicWord(PrevRun.DisplayPos)
         if (PrevRun && PrevRun.Content.length && PrevRun.Content[PrevRun.Content.length-1].Type == para_Text && PrevRun.isArabic) {
+            // we need to remove run first so it's the last in the undo order so its GenerateDisplayContent is final
+            Parent.Internal_Content_Remove(PrevRun.Pos, true)
             PrevRun.Content.slice().reverse().forEach(function(Item) {
                 this.Add_ToContent(0, Item, false, true)
             }.bind(this))
-            Parent.Internal_Content_Remove(PrevRun.Pos, true)
             this.State.ContentPos = prevPos
             this.Make_ThisElementCurrent()
         }
@@ -1154,10 +1155,11 @@ ParaRun.prototype.Remove = function(Direction, bOnAddText)
         var NextRun = Parent.GetNextArabicWord(this.DisplayPos)
         if (NextRun && NextRun.Content.length == 1 && NextRun.Content[0].Type == para_Space) NextRun = Parent.GetNextArabicWord(NextRun.DisplayPos)
         if (NextRun && NextRun.Content.length && NextRun.Content[0].Type == para_Text && NextRun.isArabic) {
+            // we need to remove run first so it's the last in the undo order so its GenerateDisplayContent is final
+            Parent.Internal_Content_Remove(NextRun.Pos, true)
             NextRun.Content.forEach(function(Item) {
                 this.Add_ToContent(this.Content.length, Item, false, true)
             }.bind(this))
-            Parent.Internal_Content_Remove(NextRun.Pos, true)
             this.State.ContentPos = NextRun.Content.length
             this.Make_ThisElementCurrent()
         }
@@ -11965,17 +11967,15 @@ function IsDiacriticalSymbol(Value) {
 ParaRun.prototype.GenerateDisplayContent = function() {
     var isArabic = false
     var hasArabic = false
-    var resultContent = []
     var len = this.Content.length
-    var string = ''
     var arabicChar
     var lastChar, lastArabicChar, isDiacriticalSymbol
-    var diff
+    this.string = ''
 
     for (var i = 0; i < len; i++) {
         var value = this.Content[i].Value
         this.Content[i].Pos = i
-        if (value) string += String.fromCharCode(value)
+        if (value) this.string += String.fromCharCode(value)
         arabicChar = value && arabicChars[value]
         if (arabicChar || isArabic) {
             if (!isArabic) {
@@ -11996,9 +11996,6 @@ ParaRun.prototype.GenerateDisplayContent = function() {
                     beforeLastArabicChar = lastArabicChar
                     lastChar = this.Content[i]
                     lastArabicChar = arabicChar
-                }
-                else if (IsDiacriticalSymbol(value)) {
-                    this.Content[i].break = false
                 }
                 else if (IsDiacriticalSymbol(value)) {
                     this.Content[i].break = false
@@ -12027,7 +12024,6 @@ ParaRun.prototype.GenerateDisplayContent = function() {
             beforeLastArabicChar = null
             this.Content[i].break = true
         }
-        resultContent.push(this.Content[i])
     }
 
     if (lastArabicChar) {
@@ -12039,17 +12035,12 @@ ParaRun.prototype.GenerateDisplayContent = function() {
         }
     }
 
-    this.string = string
-
     // postprocessing
     if (hasArabic) {
         this.isArabic = true
-        resultContent.reverse()
-        this.DisplayContent = resultContent
+        this.DisplayContent = this.Content.slice().reverse()
     }
     else {
-        // we can safely discard resultContent
-        resultContent = null
         this.isArabic = false
         this.DisplayContent = this.Content
     }
