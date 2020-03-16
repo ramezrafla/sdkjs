@@ -653,7 +653,9 @@ ParaRun.prototype.Add = function(Item, bMath)
         if (this.Type === para_Run && Item.Type == para_Space && this.Content.length > 1)
         {
             var CurOrigPos = this.GetOrigPos(this.State.ContentPos)+1
-            var RightRun = this.Split2(CurOrigPos, this.GetParent(), this.Pos, true);
+            var Parent = this.GetParent()
+            var RightRun = this.Split2(CurOrigPos, Parent, this.Pos, true);
+            Parent.GenerateDisplayContent && Parent.GenerateDisplayContent(true)
             if (this.isArabic) RightRun.MoveCursorToEndPos()
             else RightRun.MoveCursorToStartPos()
             RightRun.Make_ThisElementCurrent();

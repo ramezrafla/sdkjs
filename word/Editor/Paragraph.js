@@ -706,13 +706,8 @@ Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bOrigPos)
 	History.Add(new CChangesParagraphAddItem(this, OrigPos, [Item]));
     // this.DebugDisplayContent('Internal_Content_Add: Before')
 	this.Content.splice(OrigPos, 0, Item);
-    if (bOrigPos && this.isArabic && this.isRendered) {
-        this.GenerateDisplayContent(true)
-    }
-    else {
-        this.DisplayContent.splice(Pos, 0, Item)
-        this.UpdateContentIndexing()
-    }
+    this.DisplayContent.splice(Pos, 0, Item)
+    this.UpdateContentIndexing()
     // this.DebugDisplayContent('Internal_Content_Add: After')
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
@@ -3291,17 +3286,9 @@ Paragraph.prototype.Remove = function(nCount, isRemoveWholeElement, bRemoveOnlyS
 			{
 				this.Remove_PresentationNumbering();
 			}
-			else if (!this.isArabic && this.bFromDocument)
+			else if (this.bFromDocument)
 			{
-             	if (align_Right === Pr.Jc)
-                {
-                    this.Set_Align(align_Center);
-                }
-                else if (align_Center === Pr.Jc)
-                {
-                    this.Set_Align(align_Left);
-                }
-                else if (Math.abs(Pr.Ind.FirstLine) > 0.001)
+             	if (Math.abs(Pr.Ind.FirstLine) > 0.001)
                 {
                     if (Pr.Ind.FirstLine > 0)
                         this.Set_Ind({FirstLine : 0}, false);
@@ -16366,7 +16353,7 @@ Paragraph.prototype.GetLastArabicWordPos = function() {
     var lastLine = this.Lines[this.Lines.length-1]
     var lastRange = lastLine.Ranges[lastLine.Ranges.length -1]
     var Pos = lastRange.StartPos
-    if (Pos >= 0) {
+    if (Pos > 0) {
         var Item = this.DisplayContent[Pos]
         return Item && Item.IsParaEndRun() ? Pos - 1 : Pos
     }
