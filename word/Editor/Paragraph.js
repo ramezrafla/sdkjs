@@ -704,12 +704,16 @@ Paragraph.prototype.Internal_Content_Add = function(Pos, Item, bOrigPos)
     var OrigPos = bOrigPos ? Pos : this.GetOrigPos(Pos)
     if (bOrigPos) Pos = this.GetDisplayPos(Pos)
 	History.Add(new CChangesParagraphAddItem(this, OrigPos, [Item]));
-    Item.Pos = OrigPos
-    Item.DisplayPos = Pos
+    // this.DebugDisplayContent('Internal_Content_Add: Before')
 	this.Content.splice(OrigPos, 0, Item);
-    if (bOrigPos && this.isArabic && Pos > 0) this.DisplayContent.splice(Pos-1, 0, Item)
-    else this.DisplayContent.splice(Pos, 0, Item)
-    this.UpdateContentIndexing()
+    if (bOrigPos && this.isArabic && this.isRendered) {
+        this.GenerateDisplayContent(true)
+    }
+    else {
+        this.DisplayContent.splice(Pos, 0, Item)
+        this.UpdateContentIndexing()
+    }
+    // this.DebugDisplayContent('Internal_Content_Add: After')
 	this.private_UpdateTrackRevisions();
 	this.private_CheckUpdateBookmarks([Item]);
 	this.UpdateDocumentOutline();
@@ -843,7 +847,7 @@ Paragraph.prototype.Internal_Content_Remove = function(Pos, bOrigPos)
 	if (Item.PreDelete)
 		Item.PreDelete();
 
-	this.Content.splice(OrigPos, 1);
+	this.Content.splice(OrigPos, 1)
     this.DisplayContent.splice(Pos, 1)
     this.UpdateContentIndexing()
 	this.private_UpdateTrackRevisions();
@@ -16304,8 +16308,9 @@ CParagraphRevisionsChangesChecker.prototype.Get_PrChangeUserId = function()
     return this.TextPr.UserId;
 };
 
-Paragraph.prototype.DebugDisplayContent = function() {
-    console.log(this.DisplayContent.map(function(Item) { return Item.string + '[' + Item.DisplayPos + ',' + Item.Pos }))
+Paragraph.prototype.DebugDisplayContent = function(string) {
+    if (!this.isArabic) return
+    console.log( (string ? string+"\n" : '') + this.DisplayContent.map(function(Item) { return (Item.string ? Item.string+' ' : '') + '[' + Item.DisplayPos + ',' + Item.Pos + ']'}).join("\n"))
 }
 
 Paragraph.prototype.GetNextArabicWord = function(Pos) {
@@ -16374,25 +16379,26 @@ Paragraph.prototype.UpdateContentIndexing = function() {
 }
 
 Paragraph.prototype.DisplayLines = []
-Paragraph.prototype.GenerateDisplayContent = function() {
-    var displayUptodate = true
-    if (this.Lines.length != this.DisplayLines.length) displayUptodate = false
-    else {
-        var i = 0
-        while (displayUptodate && i < this.Lines.length) {
-            if (2*this.Lines[i].Ranges.length != this.DisplayLines[i].length) displayUptodate = false
-            else {
-                var j = 0
-                while (displayUptodate && j < this.Lines[i].Ranges.length) {
-                    if (this.Lines[i].Ranges[j].StartPos != this.DisplayLines[i][2*j]) displayUptodate = false
-                    else if (this.Lines[i].Ranges[j].EndPos != this.DisplayLines[i][2*j+1]) displayUptodate = false
-                    j++
+Paragraph.prototype.GenerateDisplayContent = function(force) {
+    var displayUptodate = !force
+    if (displayUptodate) {
+        if (this.Lines.length != this.DisplayLines.length) displayUptodate = false
+        else {
+            var i = 0
+            while (displayUptodate && i < this.Lines.length) {
+                if (2*this.Lines[i].Ranges.length != this.DisplayLines[i].length) displayUptodate = false
+                else {
+                    var j = 0
+                    while (displayUptodate && j < this.Lines[i].Ranges.length) {
+                        if (this.Lines[i].Ranges[j].StartPos != this.DisplayLines[i][2*j]) displayUptodate = false
+                        else if (this.Lines[i].Ranges[j].EndPos != this.DisplayLines[i][2*j+1]) displayUptodate = false
+                        j++
+                    }
                 }
+                i++
             }
-            i++
         }
     }
-
     if (displayUptodate) return
 
     // in case repainting moves our index
@@ -16489,6 +16495,8 @@ Paragraph.prototype.GenerateDisplayContent = function() {
         }.bind(this)) // Ranges
         this.DisplayLines.push(DisplayRanges)
     }.bind(this)) // Lines
+
+    // this.DebugDisplayContent('GenerateDisplayContent')
 }
 
 //--------------------------------------------------------export----------------------------------------------------
