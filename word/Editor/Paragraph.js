@@ -1622,29 +1622,38 @@ Paragraph.prototype.Draw = function(CurPage, pGraphics)
 
 	// 1 часть отрисовки :
 	//    Рисуем слева от параграфа знак, если данный параграф зажат другим пользователем
+    //    Draw a sign to the left of the paragraph if this paragraph is pinched by another user
 	this.Internal_Draw_1(CurPage, pGraphics, Pr);
 
 	// 2 часть отрисовки :
 	//    Добавляем специальный символ слева от параграфа, для параграфов, у которых стоит хотя бы
 	//    одна из настроек: не разрывать абзац(KeepLines), не отрывать от следующего(KeepNext),
 	//    начать с новой страницы(PageBreakBefore)
+    //    Add a special character to the left of the paragraph, for paragraphs that have at least
+    //    one of the settings: do not break the paragraph (KeepLines), do not tear off the next (KeepNext),
+    //    start from a new page (PageBreakBefore)
 	this.Internal_Draw_2(CurPage, pGraphics, Pr);
 
 	// 3 часть отрисовки :
 	//    Рисуем заливку параграфа и различные выделения текста (highlight, поиск, совместное редактирование).
 	//    Кроме этого рисуем боковые линии обводки параграфа.
+    //    Draw a paragraph fill and various text selections (highlight, search, co-editing).
+    //    In addition, draw the side lines of the paragraph stroke.
 	this.Internal_Draw_3(CurPage, pGraphics, Pr);
 
 	// 4 часть отрисовки :
 	//    Рисуем сами элементы параграфа
+    //    Draw The Elements Of The Paragraph
 	this.Internal_Draw_4(CurPage, pGraphics, Pr, BgColor, Theme, ColorMap);
 
 	// 5 часть отрисовки :
 	//    Рисуем различные подчеркивания и зачеркивания.
+    //    Draw various underscores and strikethroughs
 	this.Internal_Draw_5(CurPage, pGraphics, Pr, BgColor);
 
 	// 6 часть отрисовки :
 	//    Рисуем верхнюю, нижнюю и промежуточную границы
+    //    Draw the upper, lower, and intermediate borders
 	this.Internal_Draw_6(CurPage, pGraphics, Pr);
 
 	// Убираем обрезку
@@ -2205,7 +2214,9 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 				var nReviewType  = this.GetReviewType();
 				var oReviewColor = this.GetReviewColor();
 
-				var NumberingItem = this.Numbering;
+				var NumberingItem = this.Numbering
+                var isHaveNumbering = false
+                var oNumbering, oNumTextPr, nNumJc
 				if (para_Numbering === NumberingItem.Type)
 				{
 					var isHavePrChange = this.HavePrChange();
@@ -2213,7 +2224,6 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 
 					var NumPr = Pr.ParaPr.NumPr;
 
-					var isHaveNumbering = false;
 					if ((undefined === this.Get_SectionPr()
 						|| true !== this.IsEmpty())
 						&& ((NumPr
@@ -2231,11 +2241,11 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 
 					if (!isHaveNumbering || (!NumPr && !oPrevNumPr))
 					{
-						// Ничего не делаем
+						isHaveNumbering = false
 					}
 					else
 					{
-						var oNumbering = this.Parent.GetNumbering();
+						oNumbering = this.Parent.GetNumbering();
 
 						var oNumLvl = null;
 						if (NumPr)
@@ -2244,8 +2254,8 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 							oNumLvl = oNumbering.GetNum(oPrevNumPr.NumId).GetLvl(oPrevNumPr.Lvl);
 
 						var nNumSuff   = oNumLvl.GetSuff();
-						var nNumJc     = oNumLvl.GetJc();
-						var oNumTextPr = this.Get_CompiledPr2(false).TextPr.Copy();
+						nNumJc     = oNumLvl.GetJc();
+						oNumTextPr = this.Get_CompiledPr2(false).TextPr.Copy();
 
 						// Word не рисует подчеркивание у символа списка, если оно пришло из настроек для
 						// символа параграфа.
@@ -2294,7 +2304,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 						}
 
 						// Рисуется только сам символ нумерации
-						switch (nNumJc)
+						if (!this.isArabic) switch (nNumJc)
 						{
 							case align_Right:
 								NumberingItem.Draw(X - NumberingItem.WidthNum, Y, pGraphics, oNumbering, oNumTextPr, PDSE.Theme);
@@ -2409,7 +2419,7 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 					}
 				}
 
-				PDSE.X += NumberingItem.WidthVisible;
+				if (!this.isArabic) PDSE.X += NumberingItem.WidthVisible;
 			}
 
 			for (var Pos = StartPos; Pos <= EndPos; Pos++)
@@ -2418,6 +2428,25 @@ Paragraph.prototype.Internal_Draw_4 = function(CurPage, pGraphics, Pr, BgColor, 
 				PDSE.CurPos.Update(Pos, 0);
 				Item.Draw_Elements(PDSE);
 			}
+
+            if (this.isArabic && isHaveNumbering) {
+                PDSE.X += NumberingItem.WidthVisible;
+                switch (nNumJc)
+                {
+                    case align_Right:
+                        NumberingItem.Draw(PDSE.X + NumberingItem.WidthNum, Y, pGraphics, oNumbering, oNumTextPr, PDSE.Theme);
+                        break;
+
+                    case align_Center:
+                        NumberingItem.Draw(PDSE.X + NumberingItem.WidthNum / 2, Y, pGraphics, oNumbering, oNumTextPr, PDSE.Theme);
+                        break;
+
+                    case align_Left:
+                    default:
+                        NumberingItem.Draw(PDSE.X, Y, pGraphics, oNumbering, oNumTextPr, PDSE.Theme);
+                        break;
+                }
+            }
 		}
 
 		if (pGraphics.End_Command)
