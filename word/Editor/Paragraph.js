@@ -1340,7 +1340,7 @@ Paragraph.prototype.Internal_Recalculate_CurPos = function(Pos, UpdateCurPos, Up
 	var StartPos = this.Lines[CurLine].Ranges[CurRange].StartPos;
 	var EndPos   = this.Lines[CurLine].Ranges[CurRange].EndPos;
 
-	if (true === this.Numbering.Check_Range(CurRange, CurLine))
+	if (!this.isArabic && true === this.Numbering.Check_Range(CurRange, CurLine))
 		X += this.Numbering.WidthVisible;
 
 	for (var CurPos = StartPos; CurPos <= EndPos; CurPos++)
@@ -1477,13 +1477,11 @@ Paragraph.prototype.IsNumberedNumbering = function()
 Paragraph.prototype.IsBulletedNumbering = function()
 {
 	var oNumPr = this.GetNumPr();
-	if (!oNumPr)
-		return false;
+	if (!oNumPr) return false;
 
 	var oNumbering = this.Parent.GetNumbering();
-	var oNum       = oNumbering.GetNum(oNumPr.NumId);
-	if (!oNum)
-		return false;
+	var oNum = oNumbering.GetNum(oNumPr.NumId);
+	if (!oNum) return false;
 
 	var oLvl = oNum.GetLvl(oNumPr.Lvl);
 
@@ -1505,8 +1503,7 @@ Paragraph.prototype.IsEmptyRange = function(nCurLine, nCurRange)
 
 	for (var CurPos = StartPos; CurPos <= EndPos; CurPos++)
 	{
-		if (false === this.DisplayContent[CurPos].IsEmptyRange(nCurLine, nCurRange))
-			return false;
+		if (false === this.DisplayContent[CurPos].IsEmptyRange(nCurLine, nCurRange)) return false;
 	}
 
 	return true;
@@ -1800,7 +1797,7 @@ Paragraph.prototype.Internal_Draw_3 = function(CurPage, pGraphics, Pr)
 
 			PDSH.Reset_Range(CurPage, CurLine, CurRange, X, Y0, Y1, _Range.Spaces);
 
-			if (true === this.Numbering.Check_Range(CurRange, CurLine))
+			if (!this.isArabic && true === this.Numbering.Check_Range(CurRange, CurLine))
 			{
 				var NumberingType = this.Numbering.Type;
 				var NumberingItem = this.Numbering;
@@ -1823,10 +1820,8 @@ Paragraph.prototype.Internal_Draw_3 = function(CurPage, pGraphics, Pr)
 
 						var X_start = X;
 
-						if (align_Right === nNumJc)
-							X_start = X - NumberingItem.WidthNum;
-						else if (align_Center === nNumJc)
-							X_start = X - NumberingItem.WidthNum / 2;
+						if (align_Right === nNumJc) X_start = X - NumberingItem.WidthNum;
+						else if (align_Center === nNumJc) X_start = X - NumberingItem.WidthNum / 2;
 
 						// Если есть выделение текста, рисуем его сначала
 						if (highlight_None != oNumTextPr.HighLight)
@@ -2503,7 +2498,7 @@ Paragraph.prototype.Internal_Draw_5 = function(CurPage, pGraphics, Pr, BgColor)
 			var EndPos   = Range.EndPos;
 
 			// TODO: Нумерация подчеркивается и зачеркивается в Draw_Elements, неплохо бы сюда перенести
-			if (true === this.Numbering.Check_Range(CurRange, CurLine))
+			if (!this.isArabic && true === this.Numbering.Check_Range(CurRange, CurLine))
 				PDSL.X += this.Numbering.WidthVisible;
 
 			for (var Pos = StartPos; Pos <= EndPos; Pos++)
@@ -4622,7 +4617,7 @@ Paragraph.prototype.Get_ParaContentPosByXY = function(X, Y, PageIndex, bYLine, S
 	SearchPos.Y    = Y;
 
 	// Проверим попадание в нумерацию
-	if (true === this.Numbering.Check_Range(CurRange, CurLine))
+	if (!this.isArabic && true === this.Numbering.Check_Range(CurRange, CurLine))
 	{
 		var oNumPr = this.GetNumPr();
 		if (para_Numbering === this.Numbering.Type && oNumPr && oNumPr.IsValid())
@@ -10020,8 +10015,9 @@ Paragraph.prototype.Get_Layout = function(ContentPos, Drawing)
 	var X = this.Lines[CurLine].Ranges[CurRange].XVisible;
 	var Y = this.Pages[CurPage].Y + this.Lines[CurLine].Y;
 
-	if (true === this.Numbering.Check_Range(CurRange, CurLine))
-		X += this.Numbering.WidthVisible;
+	if (!this.isArabic && true === this.Numbering.Check_Range(CurRange, CurLine)) {
+        X += this.Numbering.WidthVisible;
+    }
 
 	var DrawingLayout = new CParagraphDrawingLayout(Drawing, this, X, Y, CurLine, CurRange, CurPage);
 
