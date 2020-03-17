@@ -1876,9 +1876,7 @@ Paragraph.prototype.private_RecalculateLineAlign = function(CurLine, CurPage, PR
             }.bind(this))
         }.bind(this))
 
-        if (AddParaEnd) {
-            content.push(this.Content[++EndPos])
-        }
+        if (AddParaEnd) content.push(this.Content[++EndPos])
 
         content.forEach(function(Item) {
             Item.Recalculate_Range_Width( PRSC, CurLine, CurRange );

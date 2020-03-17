@@ -7016,7 +7016,7 @@ Paragraph.prototype.DrawSelectionOnPage = function(CurPage)
 					DrawSelection.W         = 0;
 					DrawSelection.FindStart = true;
 
-					if (CurLine === this.Numbering.Line && CurRange === this.Numbering.Range)
+					if (!this.isArabic && CurLine === this.Numbering.Line && CurRange === this.Numbering.Range)
 						DrawSelection.StartX += this.Numbering.WidthVisible;
 
 					for (var CurPos = RStartPos; CurPos <= REndPos; CurPos++)
@@ -7383,7 +7383,7 @@ Paragraph.prototype.GetSelectionBounds = function()
 				DrawSelection.W         = 0;
 				DrawSelection.FindStart = true;
 
-				if (CurLine === this.Numbering.Line && CurRange === this.Numbering.Range)
+				if (!this.isArabic && CurLine === this.Numbering.Line && CurRange === this.Numbering.Range)
 					DrawSelection.StartX += this.Numbering.WidthVisible;
 
 				for (var CurPos = RStartPos; CurPos <= REndPos; CurPos++)
@@ -7531,7 +7531,7 @@ Paragraph.prototype.GetSelectionAnchorPos = function()
 				DrawSelection.W         = 0;
 				DrawSelection.FindStart = true;
 
-				if (CurLine === this.Numbering.Line && CurRange === this.Numbering.Range)
+				if (!this.isArabic && CurLine === this.Numbering.Line && CurRange === this.Numbering.Range)
 					DrawSelection.StartX += this.Numbering.WidthVisible;
 
 				for (var CurPos = RStartPos; CurPos <= REndPos; CurPos++)
