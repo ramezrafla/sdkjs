@@ -3530,6 +3530,11 @@ Paragraph.prototype.Add = function(Item)
 {
 	// Выставляем родительский класс
 	Item.Parent = this;
+  
+  // this function may be called during slides load if we have notes
+  if (!this.isRendered) {
+    this.DisplayContent = this.Content.slice()
+  }
 
 	if (Item.SetParagraph)
 		Item.SetParagraph(this);
