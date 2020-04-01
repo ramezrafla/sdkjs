@@ -338,6 +338,7 @@ CChangesRunAddItem.prototype.Load = function(Color)
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
 	oRun.private_UpdateTrackRevisionOnChangeContent(false);
+	oRun.private_UpdateDocumentOutline();
 };
 CChangesRunAddItem.prototype.IsRelated = function(oChanges)
 {
@@ -449,6 +450,7 @@ CChangesRunRemoveItem.prototype.Load = function()
 	oRun.RecalcInfo.Measure = true;
 	oRun.private_UpdateSpellChecking();
 	oRun.private_UpdateTrackRevisionOnChangeContent(false);
+	oRun.private_UpdateDocumentOutline();
 };
 CChangesRunRemoveItem.prototype.IsRelated = function(oChanges)
 {
