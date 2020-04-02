@@ -10,4 +10,4 @@ echo "Sleeping 10s to let new server start"
 sleep 10
 echo "Updating OnlyOffice and rebuild SDKJS"
 cd ..
-./update-docker.sh
+./build-docker.sh

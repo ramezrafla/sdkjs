@@ -11389,7 +11389,7 @@ Paragraph.prototype.CanAddDropCap = function()
 	var Count = this.DisplayContent.length;
 	for (var Pos = 0; Pos < Count; Pos++)
 	{
-		var TempRes = this.DisplayContent[Pos].Can_AddDropCap();
+		var TempRes = this.DisplayContent[Pos].CanAddDropCap();
 
 		if (null !== TempRes)
 			return TempRes;
