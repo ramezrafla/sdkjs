@@ -1824,6 +1824,8 @@ Paragraph.prototype.private_RecalculateLineAlign = function(CurLine, CurPage, PR
     var Line        = this.Lines[CurLine];
     var RangesCount = Line.Ranges.length;
 
+    var isDoNotExpandShiftReturn = this.LogicDocument ? this.LogicDocument.IsDoNotExpandShiftReturn() : false;
+
     this.isArabic =
         (this.Content[0] && this.Content[0].isArabic) ||
         (this.Content[1] && this.Content[1].isArabic) ||
