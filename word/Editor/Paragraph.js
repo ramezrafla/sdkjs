@@ -4524,6 +4524,7 @@ Paragraph.prototype.Get_ParaContentPos = function(bSelection, bStart, bUseCorrec
 	var ContentPos = new CParagraphContentPos();
 
 	var Pos = ( true !== bSelection ? this.CurPos.ContentPos : ( false !== bStart ? this.Selection.StartPos : this.Selection.EndPos ) );
+    if (!Pos) return ContentPos
 
 	ContentPos.Add(Pos);
 
@@ -13495,7 +13496,7 @@ Paragraph.prototype.SetContentPosition = function(DocPos, Depth, Flag)
 	}
 
     this.CurPos.ContentPos = Pos;
-    if (this.DisplayContent[Pos] && this.DisplayContent[Pos].SetContentPosition)
+    if (_DocPos && this.DisplayContent[Pos] && this.DisplayContent[Pos].SetContentPosition)
     	this.DisplayContent[Pos].SetContentPosition(_DocPos, Depth + 1, _Flag);
     else
         this.Correct_ContentPos2();

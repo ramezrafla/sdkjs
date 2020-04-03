@@ -26,7 +26,7 @@ then
   echo "-- Pushing to server"
   cd deploy/
   rm -f sdkjs.tgz > /dev/null
-  tar cz sdkjs.tgz sdkjs
+  tar czf sdkjs.tgz sdkjs
   scp -i $KEY sdkjs.tgz $SERVER:$LOCATION
   ssh -i $KEY $SERVER "cd $LOCATION && sudo chown ubuntu:ubuntu -R sdkjs && tar xvf sdkjs.tgz"
   rm -f sdkjs.tgz > /dev/null
