@@ -7128,7 +7128,7 @@ ParaRun.prototype.SetContentSelection = function(StartDocPos, EndDocPos, Depth, 
     {
         case  1: StartPos = 0; break;
         case -1: StartPos = this.DisplayContent.length; break;
-        case  0: StartPos = StartDocPos[Depth].Position; break;
+        case  0: StartPos = StartDocPos[Depth] ? StartDocPos[Depth].Position : 0; break;
     }
 
     var EndPos = 0;
@@ -7136,7 +7136,7 @@ ParaRun.prototype.SetContentSelection = function(StartDocPos, EndDocPos, Depth, 
     {
         case  1: EndPos = 0; break;
         case -1: EndPos = this.DisplayContent.length; break;
-        case  0: EndPos = EndDocPos[Depth].Position; break;
+        case  0: EndPos = EndDocPos[Depth] ? EndDocPos[Depth].Position : 0; break;
     }
 
     var Selection = this.State.Selection;
@@ -7151,7 +7151,7 @@ ParaRun.prototype.SetContentPosition = function(DocPos, Depth, Flag)
     {
         case  1: Pos = 0; break;
         case -1: Pos = this.DisplayContent.length; break;
-        case  0: Pos = DocPos[Depth].Position; break;
+        case  0: Pos = DocPos[Depth] ? DocPos[Depth].Position : 0; break;
     }
 
     var nLen = this.DisplayContent.length;

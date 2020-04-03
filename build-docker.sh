@@ -5,6 +5,9 @@ LOCATION=/var/www/onlyoffice/documentserver/
 cd build
 if [ -z "$NOBUILD" ]
 then
+  export PRODUCT_VERSION="15.5.0"
+  export BUILD_NUMBER="111"
+  export PUBLISHER_URL="https://www.zegenie.com"
   if [ -z "$PRODUCTION" ]
   then
     grunt --level=WHITESPACE_ONLY --formatting=PRETTY_PRINT
